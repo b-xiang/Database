@@ -1,0 +1,33 @@
+初始化仓库 git init
+克隆一个库 git clone <server>
+取得一个分支 git pull
+更新本地仓库 git pull
+
+添加文件进入缓存区     git add filename      git add *(*表示所有文件)
+将缓存区的内容提交到head   git commit -m "note"    （不是远端的仓库）
+添加进本地仓库同时提交到git仓库 git commit -a -m "note"
+推送到服务器仓库(github仓库) git push origin master
+
+
+连接到远程仓库 git remote add origin <server>  
+重新设置远程仓库位置 git remote set-url  origin https://xxx@github.org/hello/etl.git
+
+
+分支
+创建分支 git branch ***
+创建并切换分支 git checkout -b ***
+转换分支 git checkout ***
+合并分支 git merge ***
+删除分支 git branch -d ***
+
+
+git 工作流讲解
+三个工作流
+工作目录  也就是实际在电脑中的文件
+缓存区  临时保存的改动
+head  指向最后一次提交的结果
+
+配置
+git config --global user.name "Name"  设置名称
+git config --global user.email johndoe@example.com   设置邮箱
+git config --list  查看配置
