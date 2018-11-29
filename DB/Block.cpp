@@ -3,25 +3,31 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <io.h>
+#include <direct.h>
 #include "Convertor.h"
 using namespace std;
 
-Block::Block(BlockType _type, const char * _fileid, const char * _blockid)
+Block::Block(BlockType _type, string _fileid, string _blockid)
 {
 	memset(buffer, 0, sizeof(buffer));
 	blockType = _type;
-	strcpy(fileid, _fileid);
-	strcpy(blockid, _blockid);
+	strcpy(databaseObjectID, Conv64::to_64(_type, 6).c_str());
+	strcpy(fileid, _fileid.c_str());
+	strcpy(blockid, _blockid.c_str());
+	pctfree = 0;
+	pctused = 0;
+	recordnum = 0;
 	metaEnd = 0;
 	bodyBegin = BLOCK_SIZE;
 	updateBuffer();
 }
 
-Block::Block(const char * _fileid, const char * _blockid)
+Block::Block(string _fileid, string _blockid)
 {
 	memset(buffer, 0, sizeof(buffer));
-	strcpy(fileid, _fileid);
-	strcpy(blockid, _blockid);
+	strcpy(fileid, _fileid.c_str());
+	strcpy(blockid, _blockid.c_str());
 	metaEnd = 0;
 	bodyBegin = BLOCK_SIZE;
 	updateBuffer();
@@ -49,7 +55,7 @@ Expr Block::get(char * rowid)
 	return get(atoi(Conv64::to_10(rowid).c_str()));
 }
 
-const char * Block::generateRowID(Expr content)
+string Block::generateRowID(Expr content)
 {
 	stringstream ss;
 	ss << fileid << blockid<< Conv64::to_64(recordnum);
@@ -58,10 +64,11 @@ const char * Block::generateRowID(Expr content)
 
 bool Block::writeToFile()
 {
+	_mkdir("data");
 	ofstream nodeFile(getFileName(), ios::binary | ios::out);
 	if (!nodeFile)
 		return false;
-	nodeFile.seekp(atoi(Conv64::to_10(blockid).c_str()));
+	nodeFile.seekp(BLOCK_SIZE*atoi(Conv64::to_10(blockid).c_str()));
 	nodeFile.write(buffer, BLOCK_SIZE);
 	nodeFile.close();
 	return true;
@@ -110,14 +117,8 @@ void Block::updateBuffer()
 	metaEnd += sizeof(databaseObjectID) - 1;
 	memcpy(buffer + metaEnd, fileid, sizeof(fileid));
 	metaEnd += sizeof(fileid) - 1;
-	memcpy(buffer + metaEnd, blockid, sizeof(fileid));
+	memcpy(buffer + metaEnd, blockid, sizeof(blockid));
 	metaEnd += sizeof(blockid);
-	memcpy(buffer + metaEnd, blockid, sizeof(fileid));
-	metaEnd += sizeof(blockid);
-	memcpy(buffer + metaEnd, &pctfree, sizeof(pctfree));
-	metaEnd += sizeof(pctfree);
-	memcpy(buffer + metaEnd, &pctused, sizeof(fileid));
-	metaEnd += sizeof(pctused);
 	memcpy(buffer + metaEnd, &recordnum, sizeof(recordnum));
 	metaEnd += sizeof(recordnum);
 	for (int i = 0; i < recordnum; i++) {
@@ -127,7 +128,13 @@ void Block::updateBuffer()
 	for (int i = 0; i < recordnum; i++) {
 		memcpy(buffer + metaEnd, &dataType[i], sizeof(dataType[i]));
 		metaEnd += sizeof(dataType[i]);
-	}
+	}	
+	pctfree = (bodyBegin - metaEnd - 2 * sizeof(float) + 0.0f) / BLOCK_SIZE;
+	pctused = (metaEnd + (BLOCK_SIZE - bodyBegin) + 2 * sizeof(float)) / BLOCK_SIZE;
+	memcpy(buffer + metaEnd, &pctfree, sizeof(pctfree));
+	metaEnd += sizeof(pctfree);
+	memcpy(buffer + metaEnd, &pctused, sizeof(fileid));
+	metaEnd += sizeof(pctused);
 }
 
 void Block::updateVar()
@@ -149,8 +156,6 @@ void Block::updateVar()
 	location += sizeof(pctused);
 	memcpy(&recordnum, buffer + location, sizeof(recordnum));
 	location += sizeof(recordnum);
-
-	arrayLen = 0;
 	for (int i = 0; i < recordnum; i++) {
 		memcpy(&recordpos[i], buffer + location, sizeof(recordpos[i]));
 		location += sizeof(recordpos[i]);
@@ -164,21 +169,7 @@ void Block::updateVar()
 string Block::getFileName()
 {
 	stringstream ss;
-	switch (blockType)
-	{
-	case index:
-		ss << "./data/idx_" << Conv64::to_10(fileid, 3) << ".db";
-		break;
-	case table:
-		ss << "./data/tbl_" << Conv64::to_10(fileid, 3) << ".db";
-		break;
-	case dictionary:
-		ss << "./data/dict_" << Conv64::to_10(fileid, 3) << ".db";
-		break;
-	default:
-		break;
-	}
-	
+	ss << "./data/data_" << fileid << ".db";
 	return ss.str();
 }
 

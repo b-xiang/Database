@@ -9,8 +9,8 @@ using namespace std;
 class Block
 {
 public:
-	Block(BlockType _type,const char* _fileid, const char* _blockid);
-	Block(const char* _fileid, const char* _blockid);
+	Block(BlockType _type,string _fileid, string _blockid);
+	Block(string _fileid, string _blockid);
 	~Block();
 private:
 	char buffer[BLOCK_SIZE];	//读写缓存区
@@ -37,7 +37,6 @@ private:
 	//只在内存中的，用于控制块的变量
 	int16 metaEnd;		//头信息结尾
 	int16 bodyBegin;	//存储部分开始
-	int16 arrayLen;		//recordpos和dataType数组的长度
 private:
 	//要写到块里的内容
 	BlockType blockType;
@@ -53,7 +52,7 @@ public:
 	bool isAbleToInput(Expr content);	//检测一个Expr是否能被放进块中
 	bool put(Expr content);			//向块中放入数据，Expr参见sql/Expr.h
 	Expr get(char* rowid);			//按照块内行标号从块内提取数据，生成Expr
-	const char* generateRowID(Expr content);//传入一个Expr，产生该行的rowid
+	string generateRowID(Expr content);//传入一个Expr，产生该行的rowid
 	bool writeToFile();				//将该块写到文件，要求必须有文件号和文件内块号
 	bool readFromFile();			//从文件读取该块，要求必须有文件号和文件内块号
 private:

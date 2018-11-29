@@ -1,10 +1,13 @@
 #include "Convertor.h"
+#include <sstream>
+#include <string>
+using namespace std;
 
 char Conv64::m_charSet[128] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 int Conv64::m_nDigital = strlen(m_charSet);
 
 
-int64_t Conv64::sti(const string & strValue)
+int Conv64::sti(const string & strValue)
 {
 #ifdef WIN32
 	return _atoi64(strValue.c_str());
@@ -14,21 +17,23 @@ int64_t Conv64::sti(const string & strValue)
 
 }
 
-string Conv64::its(int64_t nValue)
+string Conv64::its(int nValue)
 {
-	char sz[100];
-#ifdef WIN32
-	sprintf(sz, "%I64u", nValue);
-#else
-	sprintf(sz, "%llu", nValue);
-#endif
-	return sz;
+	stringstream ss;
+	ss << nValue;
+	return ss.str();
 }
 
 string Conv64::to_64(const string & src10, const int nMinLen)
 {
 	string dst;
-	uint64_t src = sti(src10);
+	int src = sti(src10);
+	if (src == 0) {
+		char szTmp[2];
+		szTmp[0] = m_charSet[0];
+		szTmp[1] = 0;
+		dst.append(szTmp);
+	}
 	while (src != 0) {
 		int nMod = src % m_nDigital;
 		char szTmp[2];
@@ -44,14 +49,14 @@ string Conv64::to_64(const string & src10, const int nMinLen)
 	return str;
 }
 
-string Conv64::to_64(const int64_t src10, int nMinLen)
+string Conv64::to_64(int src10, int nMinLen)
 {
 	return to_64(its(src10), nMinLen);
 }
 
 string Conv64::to_10(const string & srcx, int nMinLen)
 {
-	uint64_t dst = 0L;
+	int dst = 0L;
 	for (int i = 0; i < srcx.length(); i++)
 	{
 		char c = srcx[i];
@@ -72,12 +77,13 @@ string Conv64::to_10(const string & srcx, int nMinLen)
 string Conv64::convMinLen(const string & src, int nMinLen)
 {
 	int nAddLen = nMinLen - src.length();
-	string strTmp;
+	stringstream strTmp;
 	for (int i = 0; i < nAddLen; i++)
 	{
-		strTmp += "0";
+		strTmp << "A";
 	}
-	return strTmp + src;
+	strTmp << src;
+	return strTmp.str();
 }
 
 void Conv64::init(const char * charSet)

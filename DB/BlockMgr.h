@@ -12,7 +12,7 @@ class Block;
 typedef struct file {
 	int fileid;
 	char fileid64[4];
-	int16 blockNum;
+	int blockNum;
 	file() {}
 	file(int _fileid, int _blocknum = 0) {
 		fileid = _fileid;
@@ -33,16 +33,15 @@ private:
 	BlockMgr(const BlockMgr&) {}
 	BlockMgr& operator=(const BlockMgr&)=delete;
 public:
-	bool isFileFull(const char* fileid);									//文件是否已经放满
-	bool isAbleToInput(const char* fileid,const char* blockid, Expr content);	//一个块内是否还能放入Expr
+	bool isFileFull(string fileid);									//文件是否已经放满
+	bool isAbleToInput(string fileid,string blockid, Expr content);	//一个块内是否还能放入Expr
 	bool isAbleToInput(Block* block, Expr content);					
-	const char* allocBlock(const char* fileid,BlockType bt=table);				//向一个文件内分配块,返回文件号加块号
-	const char* allocFile();												//新创建一个文件,返回文件号
-	Block* getBlock(const char* fileid, const char* blockid);					//根据fileid和blockid查找块,注意内存泄露！在函数内new了新的block，使用后需要自己delete
-	file* getFile(const char* fileid);									//根据fileid查找file
+	string allocBlock(string fileid,BlockType bt=table);				//向一个文件内分配块,返回文件号加块号
+	string allocFile();												//新创建一个文件,返回文件号
+	Block* getBlock(string fileid, string blockid);					//根据fileid和blockid查找块,注意内存泄露！在函数内new了新的block，使用后需要自己delete
+	file* getFile(string fileid);									//根据fileid查找file
 private:
 	vector<file> files;
-	Block* b;		//用于防止getBlock函数的内存泄漏
 };
 
 #endif // !BLOCK_MGR_H

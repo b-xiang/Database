@@ -18,16 +18,14 @@ void BlockMgr::release()
 
 BlockMgr::~BlockMgr()
 {
-	delete b;
-	b = nullptr;
 }
 
-bool BlockMgr::isFileFull(const char * fileid)
+bool BlockMgr::isFileFull(string fileid)
 {
 	return getFile(fileid)->blockNum >= BLOCK_NUM;
 }
 
-bool BlockMgr::isAbleToInput(const char * fileid, const char * blockid, Expr content)
+bool BlockMgr::isAbleToInput(string fileid, string blockid, Expr content)
 {
 	Block* blk = getBlock(fileid, blockid);
 	return blk->isAbleToInput(content);
@@ -39,20 +37,18 @@ bool BlockMgr::isAbleToInput(Block* block, Expr content)
 	return block->isAbleToInput(content);
 }
 
-const char * BlockMgr::allocBlock(const char * fileid, BlockType bt)
+string BlockMgr::allocBlock(string fileid, BlockType bt)
 {
-	delete b;
-	b = nullptr;
 	file* curfile = getFile(fileid);
-	curfile->blockNum++;
-	const char * blkid = Conv64::to_64(curfile->blockNum).c_str();
-	Block *blk = new Block(bt, curfile->fileid64, blkid);
+	string blkid = Conv64::to_64(curfile->blockNum,3);
+	Block *blk = new Block(bt, curfile->fileid64, blkid.c_str());
 	blk->writeToFile();
 	delete blk;
+	curfile->blockNum++;
 	return blkid;
 }
 
-const char * BlockMgr::allocFile()
+string BlockMgr::allocFile()
 {
 	int maxid = -1;
 	for (auto item : files) {
@@ -64,18 +60,18 @@ const char * BlockMgr::allocFile()
 	return files[files.size()-1].fileid64;
 }
 
-Block* BlockMgr::getBlock(const char * fileid, const char * blockid)
+Block * BlockMgr::getBlock(string fileid, string blockid)
 {
 	Block*blk = new Block(fileid, blockid);
 	blk->readFromFile();
 	return blk;
 }
 
-file * BlockMgr::getFile(const char * fileid)
+file * BlockMgr::getFile(string fileid)
 {
-	for (auto item : files) {
-		if (strcmp(item.fileid64, fileid) == 0)
-			return &item;
+	for (int i = 0; i < files.size();i++) {
+		if (strcmp(files[i].fileid64, fileid.c_str()) == 0)
+			return &files[i];
 	}
 	return nullptr;
 }
