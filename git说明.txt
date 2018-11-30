@@ -6,7 +6,7 @@
 添加文件进入缓存区     git add filename      git add *(*表示所有文件)
 将缓存区的内容提交到head   git commit -m "note"    （不是远端的仓库）
 添加进本地仓库同时提交到git仓库 git commit -a -m "note"
-推送到服务器仓库(github仓库) git push origin master
+推送到服务器仓库(github仓库) git push origin master   (-f 强制)
 
 
 连接到远程仓库 git remote add origin <server>  
