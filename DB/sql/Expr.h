@@ -122,6 +122,7 @@ struct Expr {
     static Expr* makeLiteral(int64_t val);
     static Expr* makeLiteral(double val);
     static Expr* makeLiteral(char* val);
+	static Expr* makeLiteral(const char* val);
     static Expr* makeLiteral(bool val);
     static Expr* makeNullLiteral();
     static Expr* makeColumnRef(char* name);

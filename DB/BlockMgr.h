@@ -34,8 +34,8 @@ private:
 	BlockMgr& operator=(const BlockMgr&)=delete;
 public:
 	bool isFileFull(string fileid);									//文件是否已经放满
-	bool isAbleToInput(string fileid,string blockid, Expr content);	//一个块内是否还能放入Expr
-	bool isAbleToInput(Block* block, Expr content);					
+	bool isAbleToInput(string fileid,string blockid, Expr* content);	//一个块内是否还能放入Expr
+	bool isAbleToInput(Block* block, Expr* content);					
 	string allocBlock(string fileid,BlockType bt=table);				//向一个文件内分配块,返回文件号加块号
 	string allocFile();												//新创建一个文件,返回文件号
 	Block* getBlock(string fileid, string blockid);					//根据fileid和blockid查找块,注意内存泄露！在函数内new了新的block，使用后需要自己delete

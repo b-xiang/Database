@@ -4,8 +4,10 @@
 #include <sstream>
 #include <fstream>
 #include <io.h>
+#include <assert.h>
 #include <direct.h>
 #include "Convertor.h"
+#include "Base64.h"
 using namespace std;
 
 Block::Block(BlockType _type, string _fileid, string _blockid)
@@ -28,16 +30,20 @@ Block::Block(string _fileid, string _blockid)
 	memset(buffer, 0, sizeof(buffer));
 	strcpy(fileid, _fileid.c_str());
 	strcpy(blockid, _blockid.c_str());
+	pctfree = 0;
+	pctused = 0;
+	recordnum = 0;
 	metaEnd = 0;
 	bodyBegin = BLOCK_SIZE;
-	updateBuffer();
+	readFromFile();
+	updateVar();
 }
 
 Block::~Block()
 {
 }
 
-bool Block::isAbleToInput(Expr content)
+bool Block::isAbleToInput(Expr* content)
 {
 	if (pctfree < PCT_FREE_THRESHOLD||pctused>PCT_USED_THRESHOLD)
 		return false;
@@ -45,29 +51,52 @@ bool Block::isAbleToInput(Expr content)
 	return true;
 }
 
-bool Block::put(Expr content)
+bool Block::put(Expr* content)
 {
-	return false;
+	putStrategy* str=nullptr;
+	if (content->type == kExprLiteralInt) 
+		str = new putIntStrategy;
+	else if (content->type == kExprLiteralFloat)
+		str = new putFloatStrategy;
+	else if (content->type == kExprLiteralString)
+		str = new putStringStrategy;
+	assert(str);
+	bool res = str->put(this, content);
+	delete str;
+	return res;
 }
 
-Expr Block::get(char * rowid)
+Expr* Block::get(const char * rowid)
 {
-	return get(atoi(Conv64::to_10(rowid).c_str()));
+	string s(rowid);
+	string doi = s.substr(0, 6);
+	string fid = s.substr(6, 3);
+	string bid = s.substr(9, 6);
+	string rid = s.substr(15, 3);
+	if (strcmp(doi.c_str(), databaseObjectID) != 0 || strcmp(fid.c_str(), fileid) != 0 || strcmp(bid.c_str(), blockid) != 0)
+		throw "*** Error! Row ID does not match!";
+	return get(atoi(Conv64::to_10(rid).c_str()));
 }
 
-string Block::generateRowID(Expr content)
+string Block::generateRowID()
 {
 	stringstream ss;
-	ss << fileid << blockid<< Conv64::to_64(recordnum);
-	return ss.str().c_str();
+	ss << databaseObjectID << fileid << blockid << Conv64::to_64(recordnum);
+	return ss.str();
 }
 
 bool Block::writeToFile()
 {
 	_mkdir("data");
-	ofstream nodeFile(getFileName(), ios::binary | ios::out);
+	int isExist = _access(getFileName().c_str(), 0);
+	if (isExist==-1) {
+		ofstream o(getFileName(), ios::out);
+		o.close();
+	}
+	fstream nodeFile(getFileName(), ios::binary | ios::out | ios::in);
 	if (!nodeFile)
 		return false;
+	updateBuffer();
 	nodeFile.seekp(BLOCK_SIZE*atoi(Conv64::to_10(blockid).c_str()));
 	nodeFile.write(buffer, BLOCK_SIZE);
 	nodeFile.close();
@@ -76,10 +105,10 @@ bool Block::writeToFile()
 
 bool Block::readFromFile()
 {
-	ifstream nodeFile(getFileName(), ios::binary | ios::in);
+	fstream nodeFile(getFileName(), ios::binary | ios::in);
 	if (!nodeFile)
 		return false;
-	nodeFile.seekg(atoi(Conv64::to_10(blockid).c_str()));
+	nodeFile.seekg(BLOCK_SIZE*atoi(Conv64::to_10(blockid).c_str()));
 	nodeFile.read(buffer, BLOCK_SIZE);
 	nodeFile.close();
 	return true;
@@ -110,8 +139,11 @@ void Block::setBodyBgein(int _bodyBegin)
 	bodyBegin = _bodyBegin;
 }
 
+
 void Block::updateBuffer()
 {
+	char buff[BLOCK_SIZE];
+	memset(buff, 0, sizeof(buff));
 	metaEnd = 0;
 	memcpy(buffer + metaEnd, databaseObjectID, sizeof(databaseObjectID));
 	metaEnd += sizeof(databaseObjectID) - 1;
@@ -119,16 +151,26 @@ void Block::updateBuffer()
 	metaEnd += sizeof(fileid) - 1;
 	memcpy(buffer + metaEnd, blockid, sizeof(blockid));
 	metaEnd += sizeof(blockid);
-	memcpy(buffer + metaEnd, &recordnum, sizeof(recordnum));
-	metaEnd += sizeof(recordnum);
+
+	strcpy(buff,Conv64::to_64(recordnum).c_str());
+	strcpy(buffer + metaEnd, buff);
+	metaEnd += strlen(buff) + 1;
+	
 	for (int i = 0; i < recordnum; i++) {
-		memcpy(buffer + metaEnd, &recordpos[i], sizeof(recordpos[i]));
-		metaEnd += sizeof(recordpos[i]);
+		strcpy(buff, Conv64::to_64(recordpos[i]).c_str());
+		strcpy(buffer + metaEnd, buff);
+		metaEnd += strlen(buff) + 1;
 	}
 	for (int i = 0; i < recordnum; i++) {
-		memcpy(buffer + metaEnd, &dataType[i], sizeof(dataType[i]));
-		metaEnd += sizeof(dataType[i]);
-	}	
+		strcpy(buff, Conv64::to_64(dataType[i]).c_str());
+		strcpy(buffer + metaEnd, buff);
+		metaEnd += strlen(buff) + 1;
+	}
+
+	strcpy(buff, Conv64::to_64(bodyBegin).c_str());
+	strcpy(buffer + metaEnd, buff);
+	metaEnd += strlen(buff) + 1;
+
 	pctfree = (bodyBegin - metaEnd - 2 * sizeof(float) + 0.0f) / BLOCK_SIZE;
 	pctused = (metaEnd + (BLOCK_SIZE - bodyBegin) + 2 * sizeof(float)) / BLOCK_SIZE;
 	memcpy(buffer + metaEnd, &pctfree, sizeof(pctfree));
@@ -140,30 +182,38 @@ void Block::updateBuffer()
 void Block::updateVar()
 {
 	long location = 0;
-	char buff[19];
-	memcpy(buff, buffer + location, sizeof(buff));
-	location += sizeof(buff);
+	char buff[BLOCK_SIZE];
+	memset(buff, 0, sizeof(buff));
+	strcpy(buff, buffer+location);
+	location += strlen(buff)+1;
 	string s(buff);
 	strcpy(databaseObjectID, s.substr(0, 6).c_str());
 	strcpy(fileid, s.substr(6, 3).c_str());
 	strcpy(blockid, s.substr(9, 6).c_str());
 
-	memcpy(blockid, buffer + location, sizeof(fileid));
-	location += sizeof(blockid);
+	strcpy(buff, buffer + location);
+	location += strlen(buff)+1;
+	recordnum = atoi(Conv64::to_10(buff).c_str());
+
+	for (int i = 0; i < recordnum; i++) {
+		strcpy(buff, buffer + location);
+		location += strlen(buff) + 1;
+		recordpos.push_back(atoi(Conv64::to_10(buff).c_str()));
+	}
+	for (int i = 0; i < recordnum; i++) {
+		strcpy(buff, buffer + location);
+		location += strlen(buff) + 1;
+		dataType.push_back((ExprType)atoi(Conv64::to_10(buff).c_str()));
+	}
+
+	strcpy(buff, buffer + location);
+	location += strlen(buff) + 1;
+	bodyBegin = atoi(Conv64::to_10(buff).c_str());
+
 	memcpy(&pctfree, buffer + location, sizeof(pctfree));
 	location += sizeof(pctfree);
 	memcpy(&pctused, buffer + location, sizeof(fileid));
 	location += sizeof(pctused);
-	memcpy(&recordnum, buffer + location, sizeof(recordnum));
-	location += sizeof(recordnum);
-	for (int i = 0; i < recordnum; i++) {
-		memcpy(&recordpos[i], buffer + location, sizeof(recordpos[i]));
-		location += sizeof(recordpos[i]);
-	}
-	for (int i = 0; i < recordnum; i++) {
-		memcpy(&dataType[i], buffer + location, sizeof(dataType[i]));
-		location += sizeof(dataType[i]);
-	}
 }
 
 string Block::getFileName()
@@ -173,8 +223,88 @@ string Block::getFileName()
 	return ss.str();
 }
 
-Expr Block::get(int16 idx)
+Expr* Block::get(int idx)
 {
-	return Expr(kExprLiteralNull);
+	getStrategy* str;
+	ExprType type = dataType[idx];
+	if (type == kExprLiteralInt)
+		str = new getIntStrategy;
+	else if (type == kExprLiteralFloat)
+		str = new getFloarStrategy;
+	else if (type == kExprLiteralString)
+		str = new getStringStrategy;
+	return(str->get(this, idx));
 }
 
+
+bool Block::putIntStrategy::put(Block *blk, Expr* e)
+{
+	string content = Conv64::to_64(e->ival);
+	blk->bodyBegin=blk->bodyBegin - content.length() - 1;	//-1是为了给base64型的数据加一位\0
+	strcpy(blk->buffer + blk->bodyBegin, content.c_str());
+	blk->recordnum++;
+	blk->dataType.push_back(e->type);
+	blk->recordpos.push_back(blk->bodyBegin);
+	blk->updateBuffer();
+	return true;
+}
+
+bool Block::putFloatStrategy::put(Block *blk, Expr* e)
+{
+	blk->bodyBegin = blk->bodyBegin - sizeof(double);
+	memcpy(blk->buffer + blk->bodyBegin, &e->fval, sizeof(double));
+	blk->recordnum++;
+	blk->dataType.push_back(e->type);
+	blk->recordpos.push_back(blk->bodyBegin);
+	blk->updateBuffer();
+	return true;
+}
+
+bool Block::putStringStrategy::put(Block *blk, Expr* e)
+{
+	char buff[BLOCK_SIZE];
+	memset(buff, 0, sizeof(buff));
+	b64_encode(e->name, strlen(e->name), buff);
+	blk->bodyBegin = blk->bodyBegin - strlen(buff) - 1;
+	strcpy(blk->buffer + blk->bodyBegin, buff);
+	blk->recordnum++;
+	blk->dataType.push_back(e->type);
+	blk->recordpos.push_back(blk->bodyBegin);
+	blk->updateBuffer();
+	return true;
+}
+
+Expr* Block::getStringStrategy::get(Block * blk, int idx)
+{
+	char buff[BLOCK_SIZE];
+	char decode[BLOCK_SIZE];
+	memset(buff, 0, sizeof(buff));
+	memset(decode, 0, sizeof(decode));
+	int from=blk->recordpos[idx];
+	strcpy(buff, blk->buffer + from);
+	b64_decode(buff, strlen(buff), decode);
+	Expr* e = Expr::makeLiteral(decode);
+	return e;
+}
+
+Expr* Block::getFloarStrategy::get(Block * blk, int idx)
+{
+	double res;
+	int from = blk->recordpos[idx];
+	memcpy(&res, blk->buffer + from, sizeof(res));
+	Expr* e=Expr::makeLiteral(res);
+	return e;
+}
+
+Expr* Block::getIntStrategy::get(Block * blk, int idx)
+{
+	char buff[BLOCK_SIZE];
+	char decode[BLOCK_SIZE];
+	memset(buff, 0, sizeof(buff));
+	memset(decode, 0, sizeof(decode));
+	int from = blk->recordpos[idx];
+	strcpy(buff, blk->buffer + from);
+	strcpy(decode,Conv64::to_10(buff).c_str());
+	Expr* e=Expr::makeLiteral((int64_t)atoi(decode));
+	return e;
+}

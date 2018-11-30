@@ -25,14 +25,14 @@ bool BlockMgr::isFileFull(string fileid)
 	return getFile(fileid)->blockNum >= BLOCK_NUM;
 }
 
-bool BlockMgr::isAbleToInput(string fileid, string blockid, Expr content)
+bool BlockMgr::isAbleToInput(string fileid, string blockid, Expr* content)
 {
 	Block* blk = getBlock(fileid, blockid);
 	return blk->isAbleToInput(content);
 	delete blk;
 }
 
-bool BlockMgr::isAbleToInput(Block* block, Expr content)
+bool BlockMgr::isAbleToInput(Block* block, Expr* content)
 {
 	return block->isAbleToInput(content);
 }
@@ -40,7 +40,7 @@ bool BlockMgr::isAbleToInput(Block* block, Expr content)
 string BlockMgr::allocBlock(string fileid, BlockType bt)
 {
 	file* curfile = getFile(fileid);
-	string blkid = Conv64::to_64(curfile->blockNum,3);
+	string blkid = Conv64::to_64(curfile->blockNum,6);
 	Block *blk = new Block(bt, curfile->fileid64, blkid.c_str());
 	blk->writeToFile();
 	delete blk;
@@ -63,7 +63,6 @@ string BlockMgr::allocFile()
 Block * BlockMgr::getBlock(string fileid, string blockid)
 {
 	Block*blk = new Block(fileid, blockid);
-	blk->readFromFile();
 	return blk;
 }
 

@@ -26,7 +26,7 @@ Expr::~Expr() {
     delete expr;
     delete expr2;
     delete select;
-    free(name);
+	delete[] name;
     free(table);
     free(alias);
 
@@ -117,8 +117,15 @@ Expr* Expr::makeLiteral(double value) {
 
 Expr* Expr::makeLiteral(char* string) {
     Expr* e = new Expr(kExprLiteralString);
-    e->name = string;
+	e->name = new char[strlen(string) + 1];
+	strcpy(e->name, string);
     return e;
+}
+Expr* Expr::makeLiteral(const char* string) {
+	Expr* e = new Expr(kExprLiteralString);
+	e->name = new char[strlen(string) + 1];
+	strcpy(e->name, string);
+	return e;
 }
 
 Expr* Expr::makeLiteral(bool val) {
