@@ -7,7 +7,7 @@
 
 using namespace std;
 using namespace hsql;
-// hello ñ¼¸ç
+
 
 DB* DB::instance = nullptr;
 

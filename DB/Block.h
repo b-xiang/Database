@@ -46,13 +46,16 @@ private:
 	char databaseObjectID[7];	//6位base64，数据对象号，表明行的身份，是在索引中的还是数据字典中的还是表中的
 	char fileid[4];				//3位base64，块所在文件编号
 	char blockid[7];			//6位base64，块在文件内编号
-	float pctfree;		//当pctfree大于PCTFREE_THRESHOLD才能存入
-	float pctused;		//当pctused小于PCTUSED_THRESHOLD才能存入
+	float pctfree;				//当pctfree大于PCTFREE_THRESHOLD才能存入
+	float pctused;				//当pctused小于PCTUSED_THRESHOLD才能存入
 public:
 	bool isAbleToInput(Expr* content);	//检测一个Expr是否能被放进块中
 	bool put(Expr* content);			//向块中放入数据，Expr参见sql/Expr.h
-	Expr* get(const char* rowid);			//按照块内行标号从块内提取数据，生成Expr
-	string generateRowID();//传入一个Expr，产生该行的rowid
+	Expr* get(const char* rowid);		//按照块内行标号从块内提取数据，生成Expr
+	vector<Expr*> get(const char* fromrowid, const char* torowid);	//范围提取多个Expr
+	vector<Expr*> getFromXToEnd(const char* fromrowid);				//获取从某个位置起到块尾的值
+	vector<Expr*> getFromFrontToX(const char* torowid);				//获取从开始到某个位置的值
+	string generateRowID();			//传入一个Expr，产生该行的rowid
 	bool writeToFile();				//将该块写到文件，要求必须有文件号和文件内块号
 	bool readFromFile();			//从文件读取该块，要求必须有文件号和文件内块号
 	void updateBuffer();			//更新buffer，调用此函数可以根据成员变量更新buffer数组
@@ -65,6 +68,7 @@ private:
 	void writeToBuffer(int begin, char* text);
 	string getFileName();
 	Expr* get(int idx);
+	vector<Expr*> get(int fromidx, int toidx);
 private:
 	class putStrategy {
 	public:

@@ -78,6 +78,47 @@ Expr* Block::get(const char * rowid)
 	return get(atoi(Conv64::to_10(rid).c_str()));
 }
 
+vector<Expr*> Block::get(const char * fromrowid, const char * torowid)
+{
+	string fs(fromrowid);
+	string fdoi = fs.substr(0, 6);
+	string ffid = fs.substr(6, 3);
+	string fbid = fs.substr(9, 6);
+	string frid = fs.substr(15, 3);
+	string ts(torowid);
+	string tdoi = ts.substr(0, 6);
+	string tfid = ts.substr(6, 3);
+	string tbid = ts.substr(9, 6);
+	string trid = ts.substr(15, 3);
+	if (strcmp(fdoi.c_str(), databaseObjectID) != 0 || strcmp(ffid.c_str(), fileid) != 0 || strcmp(fbid.c_str(), blockid) != 0 || strcmp(tdoi.c_str(), databaseObjectID) != 0 || strcmp(tfid.c_str(), fileid) != 0 || strcmp(tbid.c_str(), blockid) != 0)
+		throw "*** Error! Row ID does not match!";
+	return get(atoi(Conv64::to_10(frid).c_str()), atoi(Conv64::to_10(trid).c_str()));
+}
+
+vector<Expr*> Block::getFromXToEnd(const char * fromrowid)
+{
+	string s(fromrowid);
+	string doi = s.substr(0, 6);
+	string fid = s.substr(6, 3);
+	string bid = s.substr(9, 6);
+	string rid = s.substr(15, 3);
+	if (strcmp(doi.c_str(), databaseObjectID) != 0 || strcmp(fid.c_str(), fileid) != 0 || strcmp(bid.c_str(), blockid) != 0)
+		throw "*** Error! Row ID does not match!";
+	return get(atoi(Conv64::to_10(rid).c_str()), recordnum - 1);
+}
+
+vector<Expr*> Block::getFromFrontToX(const char * torowid)
+{
+	string s(torowid);
+	string doi = s.substr(0, 6);
+	string fid = s.substr(6, 3);
+	string bid = s.substr(9, 6);
+	string rid = s.substr(15, 3);
+	if (strcmp(doi.c_str(), databaseObjectID) != 0 || strcmp(fid.c_str(), fileid) != 0 || strcmp(bid.c_str(), blockid) != 0)
+		throw "*** Error! Row ID does not match!";
+	return get(0, atoi(Conv64::to_10(rid).c_str()));
+}
+
 string Block::generateRowID()
 {
 	stringstream ss;
@@ -233,7 +274,31 @@ Expr* Block::get(int idx)
 		str = new getFloarStrategy;
 	else if (type == kExprLiteralString)
 		str = new getStringStrategy;
-	return(str->get(this, idx));
+	Expr * res = str->get(this, idx);
+	delete str;
+	return res;
+}
+
+vector<Expr*> Block::get(int fromidx, int toidx)
+{
+	vector<Expr*> res;
+	getStrategy* str[3];
+	str[0] = new getIntStrategy;
+	str[1] = new getFloarStrategy;
+	str[2] = new getStringStrategy;
+
+	for (int i = fromidx; i <= toidx; i++) {
+		ExprType type = dataType[i];
+		if (type == kExprLiteralInt)
+			res.push_back(str[0]->get(this, i));
+		else if (type == kExprLiteralFloat)
+			res.push_back(str[1]->get(this, i));
+		else if (type == kExprLiteralString)
+			res.push_back(str[2]->get(this, i));
+	}
+	for (int i = 0; i < 3; i++) delete str[i];
+	
+	return res;
 }
 
 

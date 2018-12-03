@@ -31,13 +31,13 @@ int main() {
 	BlockMgr* blkmgr = BlockMgr::getInstance();
 	fid.push_back(blkmgr->allocFile());
 	blkid.push_back(blkmgr->allocBlock(fid[0], table));
-	/*blkid.push_back(blkmgr->allocBlock(fid[0], table));
+	blkid.push_back(blkmgr->allocBlock(fid[0], table));
 	blkid.push_back(blkmgr->allocBlock(fid[0], table));
 	fid.push_back(blkmgr->allocFile());
 	blkid.push_back(blkmgr->allocBlock(fid[1], index));
-	blkid.push_back(blkmgr->allocBlock(fid[1], dictionary));*/
+	blkid.push_back(blkmgr->allocBlock(fid[1], dictionary));
 
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 50; i++) {
 		Block* blk = blkmgr->getBlock(fid[0], blkid[0]);
 		Expr* e=Expr::makeLiteral((int64_t)i + 32);
 		rowid.push_back(blk->generateRowID());
@@ -45,7 +45,7 @@ int main() {
 		Expr *e1=Expr::makeLiteral("hello world");
 		rowid.push_back(blk->generateRowID());
 		blk->put(e1);
-		Expr* e2=Expr::makeLiteral(2.31);
+		Expr* e2=Expr::makeLiteral(2.31+i);
 		rowid.push_back(blk->generateRowID());
 		blk->put(e2);
 		blk->writeToFile();
@@ -54,7 +54,7 @@ int main() {
 		delete e2;
 		delete blk;
 	}
-	for (int i = 0; i < 15; i++) {
+	for (int i = 0; i < 150; i++) {
 		Block* blk= blkmgr->getBlock(fid[0], blkid[0]);
 		Expr* e = blk->get(rowid[i].c_str());
 		if (e->type == kExprLiteralFloat) {
