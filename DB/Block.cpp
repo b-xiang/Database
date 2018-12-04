@@ -41,14 +41,15 @@ Block::Block(string _fileid, string _blockid)
 
 Block::~Block()
 {
+	writeToFile();
 }
 
 bool Block::isAbleToInput(Expr* content)
 {
-	if (pctfree < PCT_FREE_THRESHOLD||pctused>PCT_USED_THRESHOLD)
+	if (isFull())
 		return false;
-	
 	return true;
+	/////////////////////////////////////////////
 }
 
 bool Block::put(Expr* content)
@@ -122,7 +123,7 @@ vector<Expr*> Block::getFromFrontToX(const char * torowid)
 string Block::generateRowID()
 {
 	stringstream ss;
-	ss << databaseObjectID << fileid << blockid << Conv64::to_64(recordnum);
+	ss << databaseObjectID << fileid << blockid << Conv64::to_64(recordnum,3);
 	return ss.str();
 }
 
@@ -255,6 +256,13 @@ void Block::updateVar()
 	location += sizeof(pctfree);
 	memcpy(&pctused, buffer + location, sizeof(fileid));
 	location += sizeof(pctused);
+}
+
+bool Block::isFull()
+{
+	if (pctfree < PCT_FREE_THRESHOLD || pctused>PCT_USED_THRESHOLD)
+		return true;
+	return false;
 }
 
 string Block::getFileName()

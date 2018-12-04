@@ -17,31 +17,17 @@ DWORD __stdcall ServerSocket::createThread(const LPVOID arg)
 	
 
 	while (1) {
-		
-
 		// 收数据
-		
 		char recvbuf[1000+5];
 		recv(sockConn, recvbuf, 1000, 0);
 		recv_buf = recvbuf;
 		cout << "这是线程" << n << "的请求 : ";
 		cout << recv_buf << endl;
-		
-		SQLParserResult res;
-		SQLParser::parse(string(recv_buf), &res);
-		if (!res.isValid()) {
-			cout << res.errorMsg() << endl;
-		}
-		for (auto stm : res.getStatements()) {
-			stm->execute();
-		}
 
-		// exit
 		if (recv_buf == "exit")
 			break;// 应该是客户端结束 服务端退出线程
 		send_buf.clear();
-		// 交给语法解释器
-		// 执行相应命令
+
 		getAndUse();
 
 		// 发数据
@@ -131,8 +117,15 @@ void ServerSocket::release()
 
 void ServerSocket::getAndUse()
 {
-	// 获取buf内容并输出
-	// 交给语法解释器
-	// 执行相应命令
+
+	SQLParserResult res;
+	SQLParser::parse(string(recv_buf), &res);
+	if (!res.isValid()) {
+		cout << res.errorMsg() << endl;
+	}
+	for (auto stm : res.getStatements()) {
+		stm->execute();
+	}
+
 	put_in_buf("Hello World\n");
 }

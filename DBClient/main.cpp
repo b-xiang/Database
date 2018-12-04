@@ -15,9 +15,8 @@ int main()
 	m->run();
 	// exit ÍË³ö
 	m->release();
-
+	delete m;
 	return 0;
-
 }
 
 

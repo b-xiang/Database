@@ -28,8 +28,9 @@ bool BlockMgr::isFileFull(string fileid)
 bool BlockMgr::isAbleToInput(string fileid, string blockid, Expr* content)
 {
 	Block* blk = getBlock(fileid, blockid);
-	return blk->isAbleToInput(content);
+	bool res = blk->isAbleToInput(content);
 	delete blk;
+	return res;
 }
 
 bool BlockMgr::isAbleToInput(Block* block, Expr* content)
@@ -73,4 +74,109 @@ file * BlockMgr::getFile(string fileid)
 			return &files[i];
 	}
 	return nullptr;
+}
+
+vector<string> BlockMgr::multiplePut(vector<Expr*> records)
+{
+	vector<string> res;
+	
+	file* curfile = getLastAvailableFile();
+	if (curfile == nullptr) {
+		allocFile();
+		curfile = getLastAvailableFile();
+	}
+	Block* curblk = getLastAvailableBlock(curfile->fileid64);
+	if (curfile == nullptr) {
+		delete curblk;
+		curblk = nullptr;
+		allocBlock(curfile->fileid64);
+		curblk = getLastAvailableBlock(curfile->fileid64);
+	}
+	for (auto r : records) {
+		if (isFileFull(curfile->fileid64)&&curblk->isFull()) {
+			allocFile();
+			curfile = getLastAvailableFile();
+			delete curblk;
+			curblk = nullptr;
+			curblk = getLastAvailableBlock(curfile->fileid64);
+		}
+		if (curblk->isFull()) {
+			allocBlock(curfile->fileid64);
+			delete curblk;
+			curblk = nullptr;
+			curblk = getLastAvailableBlock(curfile->fileid64);
+		}
+		if (curblk->isAbleToInput(r)) {
+			res.push_back(curblk->generateRowID());
+			curblk->put(r);
+		}
+		else {
+			if(isFileFull(curfile->fileid64)) {
+				allocFile();
+				curfile = getLastAvailableFile();
+				delete curblk;
+				curblk = nullptr;
+				curblk = getLastAvailableBlock(curfile->fileid64);
+			}
+			else {
+				allocBlock(curfile->fileid64);
+				delete curblk;
+				curblk = nullptr;
+				curblk = getLastAvailableBlock(curfile->fileid64);
+			}
+		}
+	}
+	return res;
+}
+
+vector<Expr*> BlockMgr::multipleGet(vector<string> rowids)
+{
+	vector<Expr*> res;
+	string hisdoi, hisfid, hisbid, hisrid;
+	file* curfile = nullptr;
+	Block* curblk = nullptr;
+	for (auto id : rowids) {
+		string s(id);
+		string doi = s.substr(0, 6);
+		string fid = s.substr(6, 3);
+		string bid = s.substr(9, 6);
+		string rid = s.substr(15, 3);
+		if (doi != hisdoi)
+			hisdoi = doi;
+		if (fid != hisfid) {
+			hisfid = fid;
+			curfile = getFile(fid);
+		}
+		if (bid != hisbid) {
+			hisbid = bid;
+			delete curblk;
+			curblk = nullptr;
+			curblk = getBlock(curfile->fileid64, bid);
+		}
+		res.push_back(curblk->get(id.c_str()));
+	}
+	return res;
+}
+
+file* BlockMgr::getLastAvailableFile()
+{
+	if (files.size() == 0)
+		return nullptr;
+	file* curfile = &files[files.size() - 1];
+	if (!isFileFull(curfile->fileid64))
+		return curfile;
+	else 
+		return nullptr;
+}
+
+Block * BlockMgr::getLastAvailableBlock(string fileid)
+{
+	file* curfile = getFile(fileid);
+	if (curfile->blockNum == 0)
+		allocBlock(fileid);
+	Block * curblk = new Block(fileid,Conv64::to_64(curfile->blockNum-1,3));
+	if (!curblk->isFull())
+		return curblk;
+	else
+		return nullptr;
 }
