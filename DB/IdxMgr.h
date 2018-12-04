@@ -1,11 +1,15 @@
 #ifndef IDX_MRG_H
 #define IDX_MRG_H
 #include <string>
+#include <map>
 using namespace std;
+
+class BPlusTree;
 
 typedef struct idx_pair {
 	string tablename;
 	string col;
+	BPlusTree* root;
 } idx_pair;
 
 class IdxMgr
@@ -20,7 +24,6 @@ private:
 	IdxMgr(const IdxMgr&) {}
 	IdxMgr& operator=(const IdxMgr&) = delete;
 private:
-
 };
 
 

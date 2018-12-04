@@ -1,6 +1,7 @@
 #include "DB.h"
 #include "SQLParser.h"
 #include "SQLParserResult.h"
+#include "serversocket.h"
 #include "Dict.h"
 #include <string>
 #include <iostream>
@@ -27,29 +28,17 @@ void DB::release()
 
 void DB::init()
 {
+	s= new ServerSocket;
 }
 
 void DB::run()
 {
-	//select id,name, height from player where money>100 and gender='male';
-	//SELECT id,name,money from table1,table2 where table1.height>160;
-	string input;
-	bool running = true;
-	while (running) {
-		cout << ">";
-		getline(cin, input);
-		SQLParserResult res;
-		SQLParser::parse(input,&res);
-		if (!res.isValid()) {
-			cout << res.errorMsg() << endl;
-		}
-		for (auto stm : res.getStatements()) {
-			running=stm->execute();
-		}
-	}
+	s->run();
 }
 
 void DB::terminate()
 {
+	s->release();
+	delete s;
 	Dict::release();
 }

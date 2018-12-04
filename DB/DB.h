@@ -1,6 +1,7 @@
 #ifndef DB_H
 #define DB_H
 
+class ServerSocket;
 class DB
 {
 public:
@@ -15,6 +16,8 @@ public:
 	void init();
 	void run();
 	void terminate();
+private:
+	ServerSocket* s;
 };
 
 #endif // !DB_H
