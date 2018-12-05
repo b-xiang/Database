@@ -83,6 +83,11 @@ private:
 	class putStringStrategy :public putStrategy {
 		virtual bool put(Block *blk, Expr* e);
 	};
+	class putArrayStrategy :public putStrategy {
+		virtual bool put(Block *blk, Expr* e);
+	};
+
+
 	class getStrategy {
 	public:
 		virtual Expr* get(Block*blk, int idx) = 0;
@@ -95,9 +100,10 @@ private:
 	};
 	class getStringStrategy :public getStrategy {
 		virtual Expr* get(Block*blk, int idx);
-
 	};
-
+	class getArrayStrategy :public getStrategy {
+		virtual Expr* get(Block*blk, int idx);
+	};
 };
 
 #endif // !BLOCK_H

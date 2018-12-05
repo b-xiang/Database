@@ -266,6 +266,8 @@ Expr* Block::get(int idx)
 		str = new getFloarStrategy;
 	else if (type == kExprLiteralString)
 		str = new getStringStrategy;
+	else if (type == kExprArray)
+		str = new getArrayStrategy;
 	Expr * res = str->get(this, idx);
 	delete str;
 	return res;
@@ -278,6 +280,7 @@ vector<Expr*> Block::get(int fromidx, int toidx)
 	str[0] = new getIntStrategy;
 	str[1] = new getFloarStrategy;
 	str[2] = new getStringStrategy;
+	str[3] = new getArrayStrategy;
 
 	for (int i = fromidx; i <= toidx; i++) {
 		ExprType type = dataType[i];
@@ -287,8 +290,10 @@ vector<Expr*> Block::get(int fromidx, int toidx)
 			res.push_back(str[1]->get(this, i));
 		else if (type == kExprLiteralString)
 			res.push_back(str[2]->get(this, i));
+		else if (type == kExprArray)
+			res.push_back(str[3]->get(this, i));
 	}
-	for (int i = 0; i < 3; i++) delete str[i];
+	for (int i = 0; i < 4; i++) delete str[i];
 	
 	return res;
 }
@@ -331,6 +336,12 @@ bool Block::putStringStrategy::put(Block *blk, Expr* e)
 	return true;
 }
 
+bool Block::putArrayStrategy::put(Block * blk, Expr * e)
+{
+	return false;
+}
+
+
 Expr* Block::getStringStrategy::get(Block * blk, int idx)
 {
 	char buff[BLOCK_SIZE];
@@ -364,4 +375,9 @@ Expr* Block::getIntStrategy::get(Block * blk, int idx)
 	strcpy(decode,Conv64::to_10(buff).c_str());
 	Expr* e=Expr::makeLiteral((int64_t)atoi(decode));
 	return e;
+}
+
+Expr * Block::getArrayStrategy::get(Block * blk, int idx)
+{
+	return nullptr;
 }

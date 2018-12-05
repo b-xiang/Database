@@ -22,19 +22,25 @@ int main() {
 #include <iostream>
 #include "SQLParser.h"
 #include "SQLParserResult.h"
+#include "Timer.h"
 using namespace std;
 using namespace hsql;
 int main() {
 	system("clear.bat");
-	vector<Expr*> src;
+	/*vector<Expr*> src;
 	vector<string> rowid;
 	vector<Expr*> res;
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < 10000; i++) {
 		src.push_back(Expr::makeLiteral((int64_t)i));
 		src.push_back(Expr::makeLiteral("hello world"));
 		src.push_back(Expr::makeLiteral(3.14*i));
 	}
 	rowid = BlockMgr::getInstance()->multiplePut(src);
 	res = BlockMgr::getInstance()->multipleGet(rowid);
+	for (auto r : res) {
+		
+	}*/
+	cout<<Timer::getCurTime();
+	system("pause");
 }
 #endif // !DEBUG

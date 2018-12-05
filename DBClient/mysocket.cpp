@@ -42,8 +42,6 @@ void MySocket::run()
 		//cin >> data;
 		getline(cin, data);
 		
-		
-
 		const char * sendData2;
 		sendData2 = data.c_str(); //stringתconst char*
 		send(sclient, sendData2, strlen(sendData2) + 1, 0);
