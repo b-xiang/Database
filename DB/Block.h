@@ -9,8 +9,7 @@ using namespace std;
 class Block
 {
 public:
-	Block(BlockType _type,string _fileid, string _blockid);
-	Block(string _fileid, string _blockid);
+	Block(string _fileid, string _blockid, BlockType _type=table);
 	~Block();
 private:
 	char buffer[BLOCK_SIZE];	//¶ÁÐ´»º´æÇø

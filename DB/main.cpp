@@ -29,7 +29,7 @@ int main() {
 	vector<Expr*> src;
 	vector<string> rowid;
 	vector<Expr*> res;
-	for (int i = 0; i < 1000; i++) {
+	for (int i = 0; i < 10; i++) {
 		src.push_back(Expr::makeLiteral((int64_t)i));
 		src.push_back(Expr::makeLiteral("hello world"));
 		src.push_back(Expr::makeLiteral(3.14*i));

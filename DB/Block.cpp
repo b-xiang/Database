@@ -10,7 +10,7 @@
 #include "Base64.h"
 using namespace std;
 
-Block::Block(BlockType _type, string _fileid, string _blockid)
+Block::Block(string _fileid, string _blockid, BlockType _type)
 {
 	memset(buffer, 0, sizeof(buffer));
 	blockType = _type;
@@ -22,26 +22,10 @@ Block::Block(BlockType _type, string _fileid, string _blockid)
 	recordnum = 0;
 	metaEnd = 0;
 	bodyBegin = BLOCK_SIZE;
-	updateBuffer();
-}
-
-Block::Block(string _fileid, string _blockid)
-{
-	memset(buffer, 0, sizeof(buffer));
-	strcpy(fileid, _fileid.c_str());
-	strcpy(blockid, _blockid.c_str());
-	pctfree = 0;
-	pctused = 0;
-	recordnum = 0;
-	metaEnd = 0;
-	bodyBegin = BLOCK_SIZE;
-	readFromFile();
-	updateVar();
 }
 
 Block::~Block()
 {
-	writeToFile();
 }
 
 bool Block::isAbleToInput(Expr* content)

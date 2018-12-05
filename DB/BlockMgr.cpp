@@ -42,7 +42,7 @@ string BlockMgr::allocBlock(string fileid, BlockType bt)
 {
 	file* curfile = getFile(fileid);
 	string blkid = Conv64::to_64(curfile->blockNum,6);
-	Block *blk = new Block(bt, curfile->fileid64, blkid.c_str());
+	Block *blk = new Block(curfile->fileid64, blkid.c_str(),bt);
 	blk->writeToFile();
 	delete blk;
 	curfile->blockNum++;
@@ -64,6 +64,8 @@ string BlockMgr::allocFile()
 Block * BlockMgr::getBlock(string fileid, string blockid)
 {
 	Block*blk = new Block(fileid, blockid);
+	blk->readFromFile();
+	blk->updateVar();
 	return blk;
 }
 
@@ -86,23 +88,22 @@ vector<string> BlockMgr::multiplePut(vector<Expr*> records)
 		curfile = getLastAvailableFile();
 	}
 	Block* curblk = getLastAvailableBlock(curfile->fileid64);
-	if (curfile == nullptr) {
-		delete curblk;
-		curblk = nullptr;
+	if (curblk == nullptr) {
 		allocBlock(curfile->fileid64);
 		curblk = getLastAvailableBlock(curfile->fileid64);
 	}
+
 	for (auto r : records) {
 		if (isFileFull(curfile->fileid64)&&curblk->isFull()) {
 			allocFile();
 			curfile = getLastAvailableFile();
-			delete curblk;
+			releaseBlk(curblk);
 			curblk = nullptr;
 			curblk = getLastAvailableBlock(curfile->fileid64);
 		}
 		if (curblk->isFull()) {
 			allocBlock(curfile->fileid64);
-			delete curblk;
+			releaseBlk(curblk);
 			curblk = nullptr;
 			curblk = getLastAvailableBlock(curfile->fileid64);
 		}
@@ -114,18 +115,19 @@ vector<string> BlockMgr::multiplePut(vector<Expr*> records)
 			if(isFileFull(curfile->fileid64)) {
 				allocFile();
 				curfile = getLastAvailableFile();
-				delete curblk;
+				releaseBlk(curblk);
 				curblk = nullptr;
 				curblk = getLastAvailableBlock(curfile->fileid64);
 			}
 			else {
 				allocBlock(curfile->fileid64);
-				delete curblk;
+				releaseBlk(curblk);
 				curblk = nullptr;
 				curblk = getLastAvailableBlock(curfile->fileid64);
 			}
 		}
 	}
+	releaseBlk(curblk);
 	return res;
 }
 
@@ -149,7 +151,7 @@ vector<Expr*> BlockMgr::multipleGet(vector<string> rowids)
 		}
 		if (bid != hisbid) {
 			hisbid = bid;
-			delete curblk;
+			releaseBlk(curblk);
 			curblk = nullptr;
 			curblk = getBlock(curfile->fileid64, bid);
 		}
@@ -175,8 +177,18 @@ Block * BlockMgr::getLastAvailableBlock(string fileid)
 	if (curfile->blockNum == 0)
 		allocBlock(fileid);
 	Block * curblk = new Block(fileid,Conv64::to_64(curfile->blockNum-1,3));
+	curblk->readFromFile();
+	curblk->updateVar();
 	if (!curblk->isFull())
 		return curblk;
 	else
 		return nullptr;
+}
+
+void BlockMgr::releaseBlk(Block * blk)
+{
+	if (blk == nullptr)
+		return;
+	blk->writeToFile();
+	delete blk;
 }

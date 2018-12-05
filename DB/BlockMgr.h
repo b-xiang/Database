@@ -45,6 +45,7 @@ public:
 private:
 	file* getLastAvailableFile();			//获取第一个可用的文件，如果所有文件都满了，可以自动调用allocFile新建文件
 	Block* getLastAvailableBlock(string fileid);		//获取一个文件中最后一个可用的块
+	void releaseBlk(Block* blk);						//释放block
 private:
 	vector<file> files;
 };
