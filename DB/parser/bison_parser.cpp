@@ -67,7 +67,7 @@
 #define yyerror         hsql_error
 #define yydebug         hsql_debug
 #define yynerrs         hsql_nerrs
-
+extern char errmsg[1024];
 
 /* Copy the first part of user declarations.  */
 #line 1 "bison_parser.y" /* yacc.c:339  */

@@ -75,15 +75,19 @@ private:
 		virtual bool put(Block *blk, Expr* e) = 0;
 	};
 	class putIntStrategy :public putStrategy {
+	public:
 		virtual bool put(Block *blk, Expr* e);
 	};
 	class putFloatStrategy :public putStrategy {
+	public:
 		virtual bool put(Block *blk, Expr* e);
 	};
 	class putStringStrategy :public putStrategy {
+	public:
 		virtual bool put(Block *blk, Expr* e);
 	};
 	class putArrayStrategy :public putStrategy {
+	public:
 		virtual bool put(Block *blk, Expr* e);
 	};
 
@@ -93,17 +97,47 @@ private:
 		virtual Expr* get(Block*blk, int idx) = 0;
 	};
 	class getIntStrategy :public getStrategy {
+	public:
 		virtual Expr* get(Block*blk, int idx);
 	};
-	class getFloarStrategy :public getStrategy {
+	class getFloatStrategy :public getStrategy {
+	public:
 		virtual Expr* get(Block*blk, int idx);
 	};
 	class getStringStrategy :public getStrategy {
+	public:
 		virtual Expr* get(Block*blk, int idx);
 	};
 	class getArrayStrategy :public getStrategy {
+	public:
 		virtual Expr* get(Block*blk, int idx);
 	};
+
+private:
+	static putStrategy* getPutStrategy(ExprType type) {
+		putStrategy* str;
+		if (type == kExprLiteralInt)
+			str = new putIntStrategy;
+		else if (type == kExprLiteralFloat)
+			str = new putFloatStrategy;
+		else if (type == kExprLiteralString)
+			str = new putStringStrategy;
+		else if (type == kExprArray)
+			str = new putArrayStrategy;
+		return str;
+	}
+	static getStrategy* getGetStrategy(ExprType type) {
+		getStrategy* str;
+		if (type == kExprLiteralInt)
+			str = new getIntStrategy;
+		else if (type == kExprLiteralFloat)
+			str = new getFloatStrategy;
+		else if (type == kExprLiteralString)
+			str = new getStringStrategy;
+		else if (type == kExprArray)
+			str = new getArrayStrategy;
+		return str;
+	}
 };
 
 #endif // !BLOCK_H

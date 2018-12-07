@@ -1,9 +1,10 @@
 #include "DB.h"
-#define DEBUG
+//#define DEBUG
 
 
 #ifndef DEBUG
 int main() {
+	
 	DB * db = DB::getInstance();
 
 	db->init();
@@ -27,10 +28,10 @@ using namespace std;
 using namespace hsql;
 int main() {
 	system("clear.bat");
-	/*vector<Expr*> src;
+	vector<Expr*> src;
 	vector<string> rowid;
 	vector<Expr*> res;
-	for (int i = 0; i < 10000; i++) {
+	for (int i = 0; i < 100; i++) {
 		src.push_back(Expr::makeLiteral((int64_t)i));
 		src.push_back(Expr::makeLiteral("hello world"));
 		src.push_back(Expr::makeLiteral(3.14*i));
@@ -38,9 +39,13 @@ int main() {
 	rowid = BlockMgr::getInstance()->multiplePut(src);
 	res = BlockMgr::getInstance()->multipleGet(rowid);
 	for (auto r : res) {
-		
-	}*/
-	cout<<Timer::getCurTime();
+		if (r->isType(kExprLiteralInt))
+			cout << r->ival << endl;
+		else if (r->isType(kExprLiteralFloat))
+			cout << r->fval << endl;
+		else if (r->isType(kExprLiteralString))
+			cout << r->name << endl;
+	}
 	system("pause");
 }
 #endif // !DEBUG

@@ -1,6 +1,7 @@
 #include "serversocket.h"
 #include "SQLParser.h"
 #include "SQLParserResult.h"
+#include "Timer.h"
 using namespace hsql;
 
 int ServerSocket::thread_num = 0;
@@ -9,7 +10,7 @@ string ServerSocket::send_buf;
 DWORD __stdcall ServerSocket::createThread(const LPVOID arg)
 {
 	int n = thread_num++;
-	
+	cout << Timer::getCurTime() << ": 线程" << n << "已连接" << endl;
 
 	F *temp = (F*)arg;
 	SOCKET sockConn = temp->sockConn;
@@ -21,11 +22,15 @@ DWORD __stdcall ServerSocket::createThread(const LPVOID arg)
 		char recvbuf[1000+5];
 		recv(sockConn, recvbuf, 1000, 0);
 		recv_buf = recvbuf;
-		cout << "这是线程" << n << "的请求 : ";
+		cout << Timer::getCurTime() <<": 来自线程" << n << "的请求 : ";
 		cout << recv_buf << endl;
 
-		if (recv_buf == "exit")
+		if (recv_buf == "exit") {
+			cout << Timer::getCurTime() << ": 线程" << n << "退出 " << endl;
+
 			break;// 应该是客户端结束 服务端退出线程
+		}
+			
 		send_buf.clear();
 
 		getAndUse();
@@ -86,9 +91,9 @@ void ServerSocket::run()
 		return;
 	}
 	else {
-		std::cout << "socket编号：  " << (int)Listen_Sock << std::endl;
+		std::cout <<Timer::getCurTime() <<": socket已建立，正在监听。socket编号： " << (int)Listen_Sock << std::endl;
 	}
-	std::cout << "等待连接" << std::endl;
+	std::cout << Timer::getCurTime() << ": 服务器等待连接中" << std::endl;
 	for (int i = 0; i < max_thread_num; i++)
 	{
 		sockaddr_in addrClient;
@@ -122,10 +127,12 @@ void ServerSocket::getAndUse()
 	SQLParser::parse(string(recv_buf), &res);
 	if (!res.isValid()) {
 		cout << res.errorMsg() << endl;
+		put_in_buf(res.errorMsg());
+		put_in_buf("\n");
+		return;
 	}
 	for (auto stm : res.getStatements()) {
 		stm->execute();
 	}
-
-	put_in_buf("Hello World\n");
+	put_in_buf("服务器处理返回的结果\n");
 }

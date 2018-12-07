@@ -258,16 +258,8 @@ string Block::getFileName()
 
 Expr* Block::get(int idx)
 {
-	getStrategy* str;
 	ExprType type = dataType[idx];
-	if (type == kExprLiteralInt)
-		str = new getIntStrategy;
-	else if (type == kExprLiteralFloat)
-		str = new getFloarStrategy;
-	else if (type == kExprLiteralString)
-		str = new getStringStrategy;
-	else if (type == kExprArray)
-		str = new getArrayStrategy;
+	getStrategy*str = getGetStrategy(type);
 	Expr * res = str->get(this, idx);
 	delete str;
 	return res;
@@ -276,11 +268,11 @@ Expr* Block::get(int idx)
 vector<Expr*> Block::get(int fromidx, int toidx)
 {
 	vector<Expr*> res;
-	getStrategy* str[3];
-	str[0] = new getIntStrategy;
-	str[1] = new getFloarStrategy;
-	str[2] = new getStringStrategy;
-	str[3] = new getArrayStrategy;
+	getStrategy* str[4];
+	str[0] = getGetStrategy(kExprLiteralInt);
+	str[1] = getGetStrategy(kExprLiteralFloat);
+	str[2] = getGetStrategy(kExprLiteralString);
+	str[3] = getGetStrategy(kExprArray);
 
 	for (int i = fromidx; i <= toidx; i++) {
 		ExprType type = dataType[i];
@@ -297,7 +289,6 @@ vector<Expr*> Block::get(int fromidx, int toidx)
 	
 	return res;
 }
-
 
 bool Block::putIntStrategy::put(Block *blk, Expr* e)
 {
@@ -338,7 +329,14 @@ bool Block::putStringStrategy::put(Block *blk, Expr* e)
 
 bool Block::putArrayStrategy::put(Block * blk, Expr * e)
 {
-	return false;
+	putStrategy* str=nullptr;
+	for (auto item : *e->exprList) {
+		delete str;
+		str = nullptr;
+		str = Block::getPutStrategy(item->type);
+		str->put(blk, e);
+	}
+	return true;
 }
 
 
@@ -355,7 +353,7 @@ Expr* Block::getStringStrategy::get(Block * blk, int idx)
 	return e;
 }
 
-Expr* Block::getFloarStrategy::get(Block * blk, int idx)
+Expr* Block::getFloatStrategy::get(Block * blk, int idx)
 {
 	double res;
 	int from = blk->recordpos[idx];
@@ -379,5 +377,11 @@ Expr* Block::getIntStrategy::get(Block * blk, int idx)
 
 Expr * Block::getArrayStrategy::get(Block * blk, int idx)
 {
-	return nullptr;
+	vector<Expr*>* vec = new vector<Expr*>;
+	int n = 0;//需要从数据字典中获取
+	for (int i = 0; i < n; i++) {
+		getStrategy* str = getGetStrategy(blk->dataType[idx + i]);
+		vec->push_back(str->get(blk,idx+i));
+	}
+	return Expr::makeArray(vec);
 }

@@ -7,15 +7,13 @@ MySocket::MySocket()
 	WSADATA data;
 	if (WSAStartup(sockVersion, &data) != 0)
 	{
-		return ;
+		return;
 	}
-
 
 	sclient = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); //客户端套接字
 	if (sclient == INVALID_SOCKET)
 	{
 		std::cout << "invalid socket!" << std::endl;
-		
 		return ;
 	}
 
@@ -27,7 +25,7 @@ MySocket::MySocket()
 	{
 		cout << "connect error !" << endl;
 		closesocket(sclient);
-		return ;
+		return;
 	}
 }
 
@@ -37,7 +35,7 @@ void MySocket::run()
 	while (1)
 	{
 		// 输入exit退出
-		printf("请输入SQL语句： \n");
+		printf(">");
 		string data;
 		//cin >> data;
 		getline(cin, data);
@@ -58,7 +56,7 @@ void MySocket::run()
 
 
 	}
-	// release();
+	release();
 }
 
 void MySocket::release()
