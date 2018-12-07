@@ -262,5 +262,3 @@ __pycache__/
 
 *.db
 *.dict
-*.vcxproj
-*.vcxproj.filters
