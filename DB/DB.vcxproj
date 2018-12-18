@@ -123,6 +123,7 @@
     <ClInclude Include="BlockMgr.h" />
     <ClInclude Include="BPlus_node.h" />
     <ClInclude Include="BPlus_tree.h" />
+    <ClInclude Include="BufferMgr.h" />
     <ClInclude Include="Convertor.h" />
     <ClInclude Include="DB.h" />
     <ClInclude Include="Dict.h" />
@@ -133,6 +134,7 @@
     <ClInclude Include="parser\flex_lexer.h" />
     <ClInclude Include="parser\parser_typedef.h" />
     <ClInclude Include="parser\unistd.h" />
+    <ClInclude Include="RWmutex.h" />
     <ClInclude Include="serversocket.h" />
     <ClInclude Include="SQLParser.h" />
     <ClInclude Include="SQLParserResult.h" />
@@ -159,6 +161,7 @@
     <ClCompile Include="BlockMgr.cpp" />
     <ClCompile Include="BPlus_node.cpp" />
     <ClCompile Include="BPlus_tree.cpp" />
+    <ClCompile Include="BufferMgr.cpp" />
     <ClCompile Include="Convertor.cpp" />
     <ClCompile Include="DB.cpp" />
     <ClCompile Include="Dict.cpp" />
@@ -167,6 +170,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="parser\bison_parser.cpp" />
     <ClCompile Include="parser\flex_lexer.cpp" />
+    <ClCompile Include="RWmutex.cpp" />
     <ClCompile Include="serversocket.cpp" />
     <ClCompile Include="SQLParser.cpp" />
     <ClCompile Include="SQLParserResult.cpp" />

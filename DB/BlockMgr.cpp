@@ -125,6 +125,7 @@ vector<string> BlockMgr::multiplePut(vector<Expr*> records)
 				curblk = nullptr;
 				curblk = getLastAvailableBlock(curfile->fileid64);
 			}
+			curblk->put(r);
 		}
 	}
 	releaseBlk(curblk);
