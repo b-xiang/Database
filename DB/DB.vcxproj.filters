@@ -135,10 +135,10 @@
     <ClInclude Include="Timer.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="BufferMgr.h">
-      <Filter>源文件</Filter>
-    </ClInclude>
     <ClInclude Include="RWmutex.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="BufferMgr.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -206,10 +206,10 @@
     <ClCompile Include="Timer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="BufferMgr.cpp">
-      <Filter>头文件</Filter>
-    </ClCompile>
     <ClCompile Include="RWmutex.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="BufferMgr.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

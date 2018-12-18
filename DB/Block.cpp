@@ -249,6 +249,16 @@ bool Block::isFull()
 	return false;
 }
 
+const char * Block::getFileid()
+{
+	return fileid;
+}
+
+const char * Block::getBlockid()
+{
+	return blockid;
+}
+
 string Block::getFileName()
 {
 	stringstream ss;

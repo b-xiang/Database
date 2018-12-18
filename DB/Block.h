@@ -60,6 +60,8 @@ public:
 	void updateBuffer();			//更新buffer，调用此函数可以根据成员变量更新buffer数组
 	void updateVar();				//更新成员变量，调用此函数可以根据buffer数组更新成员变量
 	bool isFull();					//判断pctfree和pctused是否符合要求
+	const char* getFileid();
+	const char* getBlockid();
 private:
 	int getMetaEnd();
 	void setMetaEnd(int _metaEnd);
