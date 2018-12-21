@@ -207,7 +207,7 @@ void Block::updateBuffer()
 
 void Block::updateVar()
 {
-	long location = 0;
+	size_t location = 0;
 	char buff[BLOCK_SIZE];
 	memset(buff, 0, sizeof(buff));
 	strcpy(buff, buffer+location);

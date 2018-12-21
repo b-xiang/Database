@@ -36,9 +36,6 @@
     <ClInclude Include="DB.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Dict.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="global.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -141,12 +138,12 @@
     <ClInclude Include="BufferMgr.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Dict.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DB.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="Dict.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Logger.cpp">
@@ -210,6 +207,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="BufferMgr.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Dict.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

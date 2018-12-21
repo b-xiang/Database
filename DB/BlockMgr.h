@@ -42,9 +42,9 @@ public:
 	file* getFile(string fileid);									//根据fileid查找file
 	vector<string> multiplePut(vector<Expr*> records);				//自动将多条数据存入块中，返回各条记录的rowid
 	vector<Expr*> multipleGet(vector<string> rowids);				//根据多条rowid自动获取多条记录
+	Block* getLastAvailableBlock(string fileid);		//获取一个文件中最后一个可用的块
 private:
 	file* getLastAvailableFile();						//获取第一个可用的文件，如果所有文件都满了，可以自动调用allocFile新建文件
-	Block* getLastAvailableBlock(string fileid);		//获取一个文件中最后一个可用的块
 	void releaseBlk(Block* blk);						//释放block
 private:
 	vector<file> files;

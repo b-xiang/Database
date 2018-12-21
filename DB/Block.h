@@ -47,10 +47,19 @@ private:
 	char blockid[7];			//6位base64，块在文件内编号
 	float pctfree;				//当pctfree大于PCTFREE_THRESHOLD才能存入
 	float pctused;				//当pctused小于PCTUSED_THRESHOLD才能存入
+	string nextblockid;			//该块在该文件的下一个块的blockid
 public:
+	string GetNextblockid() {
+		return nextblockid;
+	}
+
+	int GetRecordnum() {
+		return recordnum;
+	}
 	bool isAbleToInput(Expr* content);	//检测一个Expr是否能被放进块中
 	bool put(Expr* content);			//向块中放入数据，Expr参见sql/Expr.h
 	Expr* get(const char* rowid);		//按照块内行标号从块内提取数据，生成Expr
+	vector<Expr*> get(int fromidx, int toidx);
 	vector<Expr*> get(const char* fromrowid, const char* torowid);	//范围提取多个Expr
 	vector<Expr*> getFromXToEnd(const char* fromrowid);				//获取从某个位置起到块尾的值
 	vector<Expr*> getFromFrontToX(const char* torowid);				//获取从开始到某个位置的值
@@ -70,7 +79,7 @@ private:
 	void writeToBuffer(int begin, char* text);
 	string getFileName();
 	Expr* get(int idx);
-	vector<Expr*> get(int fromidx, int toidx);
+	
 private:
 	class putStrategy {
 	public:
