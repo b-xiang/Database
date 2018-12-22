@@ -16,61 +16,6 @@
 #include"sql\Expr.h"
 using namespace std;
 
-class Dict
-{
-private:
-	//以下属性用于放五个数据字典文件的第一个块的块号（每个数据字典放在一个文件里），用于查找时的遍历
-	string userblock1;
-	string databaseblock1;
-	string classblock1;
-	string attributeblock1;
-	string indexblock1;
-
-public:
-	static Dict* getInstance();
-	static void release();
-private:
-	static Dict* instance;
-	Dict() {}
-	Dict(const Dict&) = delete;
-	Dict& operator=(const Dict&) = delete;
-public:
-
-	void InitDictionary();					//创建所有数据字典表文件，整个程序只可以调用一次，该函数创建五个数据字典文件，
-											//同时为其分配一个块，并记录第一个块的块号在文件"./data/firstblockid.bid"中
-
-	void Init();							//数据字典初始化，初始化oid，将最新可以分配的oid加载到程序中
-
-	int DeliverOid();							//分配一个oid
-												//当生成一个数据库对象（用户、数据库、表、索引、属性）的时候，用该函数得到该对象的oid
-
-	User*	CreateUser();					//创建一个数据库用户对象
-	Database* CreateDatabase();				//创建数据库
-	Class*	CreateClass();					//创建表、索引
-	Attribute* CreateAttribute();			//创建属性对象
-	Index*	CreateIndex();					//创建索引对象
-
-
-	User*	GetUser(string username);		//从用户表中，根据username找到user对象
-	Database*	GetDatabase(User* user, string dbname);	//从数据库表中，根据数据库名字and数据库所有者找到数据库
-	Class*	GetClass(Database* tdatabase, string relationname);	//从class表中，根据数据库和relation的名字找到表、索引
-	vector<Attribute*>	GetAttribute(Class* table);		//从attribute表中，根据表的oid，找到该表所有属性
-	Attribute*	GetAttribute(int attritubeid);			//从attribute表中，根据属性oid找到属性
-	vector<Attribute*>	GetAttribute(Index* index);		//从attribute表中，根据索引，找到该索引所有属性
-	Index*	GetIndex(Class* tindex);					//从index表中，根据class中的索引的oid，找到索引对象
-
-
-	void StoreUser(User* tuser);			//将user存入user表
-	void StoreDatabase(Database* tdatabase);		//将database存入database表中
-	void StoreClass(Class* tclass);			//将数据库对象（表，索引）存入class表中
-	void StoreAttribute(Attribute* tattribute);		//将attribute存入attribute表中
-	void StoreIndex(Index* tindex);			//将index存入index表中
-
-};
-
-
-
-
 
 
 /*------------------------------------
@@ -316,10 +261,7 @@ public:
 	string name;			//name of index索引名称
 	char indtype;			//type of index, o唯一索引, p主索引, a其他
 	vector<int> indkeys;				//the attritube id of index	索引的属性id
-
-
 	string fileid;			//Index表的文件号为5
-
 public:
 	Index();
 	~Index() {}
@@ -345,8 +287,54 @@ public:
 	void StoreToFile();					//将该对象存入index表文件中
 };
 
+class Dict {
+private:
+	//以下属性用于放五个数据字典文件的第一个块的块号（每个数据字典放在一个文件里），用于查找时的遍历
+	string userblock1;
+	string databaseblock1;
+	string classblock1;
+	string attributeblock1;
+	string indexblock1;
+
+public:
+	static Dict* getInstance();
+	static void release();
+private:
+	static Dict* instance;
+	Dict() {}
+	Dict(const Dict&) = delete;
+	Dict& operator=(const Dict&) = delete;
+public:
+
+	void InitDictionary();					//创建所有数据字典表文件，整个程序只可以调用一次，该函数创建五个数据字典文件，
+											//同时为其分配一个块，并记录第一个块的块号在文件"./data/firstblockid.bid"中
+
+	void Init();							//数据字典初始化，初始化oid，将最新可以分配的oid加载到程序中
+
+	int DeliverOid();							//分配一个oid
+												//当生成一个数据库对象（用户、数据库、表、索引、属性）的时候，用该函数得到该对象的oid
+
+	User*	CreateUser();					//创建一个数据库用户对象
+	Database* CreateDatabase();				//创建数据库
+	Class*	CreateClass();					//创建表、索引
+	Attribute* CreateAttribute();			//创建属性对象
+	Index*	CreateIndex();					//创建索引对象
 
 
+	User*	GetUser(string username);		//从用户表中，根据username找到user对象
+	Database*	GetDatabase(User* user, string dbname);	//从数据库表中，根据数据库名字and数据库所有者找到数据库
+	Class*	GetClass(Database* tdatabase, string relationname);	//从class表中，根据数据库和relation的名字找到表、索引
+	vector<Attribute*>	GetAttribute(Class* table);		//从attribute表中，根据表的oid，找到该表所有属性
+	Attribute*	GetAttribute(int attritubeid);			//从attribute表中，根据属性oid找到属性
+	vector<Attribute*>	GetAttribute(Index* index);		//从attribute表中，根据索引，找到该索引所有属性
+	Index*	GetIndex(Class* tindex);					//从index表中，根据class中的索引的oid，找到索引对象
 
 
+	void StoreUser(User* tuser);			//将user存入user表
+	void StoreDatabase(Database* tdatabase);		//将database存入database表中
+	void StoreClass(Class* tclass);			//将数据库对象（表，索引）存入class表中
+	void StoreAttribute(Attribute* tattribute);		//将attribute存入attribute表中
+	void StoreIndex(Index* tindex);			//将index存入index表中
+
+};
 #endif // !DICT_H

@@ -628,7 +628,7 @@ void Database::SetDatacl(vector<int> tdatacl) {
 
 bool Database::IsAvailable(int userid) {
 	vector<int>::iterator iter;
-	for (iter = datacl.begin; iter != datacl.end(); iter++)
+	for (iter = datacl.begin(); iter != datacl.end(); iter++)
 	{
 		if ((*iter) == userid) {
 			return true;			//该user有权限
@@ -699,12 +699,12 @@ Class::Class()
 	fileid = file_user.fileid64;
 }
 
-void Class::AddTuples(int num = 1)
+void Class::AddTuples(int num)
 {
 	reltuples = reltuples + num;
 }
 
-void Class::DeleteTuples(int num = 1) {
+void Class::DeleteTuples(int num) {
 	reltuples = reltuples - num;
 }
 
