@@ -7,8 +7,9 @@ BufferMgr* BufferMgr::instance = nullptr;
 
 BufferMgr * BufferMgr::getInstance()
 {
-	if (instance == nullptr)
+	if (instance == nullptr) {
 		instance = new BufferMgr;
+	}	
 	return instance;
 }
 
@@ -24,7 +25,7 @@ BufferMgr::~BufferMgr()
 void BufferMgr::initialBuffer() {
 	string s = "-1";
 	BufferBlock* curblk = NULL;
-	for (int i = 0; i < bufferblockNum; i++) {
+	for (int i = 0; i < DATA_BUFFER_BLOCK_NUM; i++) {
 		if (head == NULL) {
 			head = new BufferBlock();
 			head->blk = new Block(s,s);
@@ -41,6 +42,8 @@ void BufferMgr::initialBuffer() {
 }
 Block* BufferMgr::findBlockById(string fileid, string blockid) {
 	string s = "-1";
+	if (head == NULL)
+		initialBuffer();
 	BufferBlock* m = head;
 	BufferBlock* n = NULL;
 	while (m != NULL) {

@@ -4,7 +4,6 @@
 #include "sql/Expr.h"
 #include "Convertor.h"
 #include "global.h"
-#define bufferblockNum 5//»º´æÇøÒ»¹²5¿é
 using namespace std;
 using namespace hsql;
 

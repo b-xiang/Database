@@ -39,7 +39,7 @@ public:
 	string allocBlock(string fileid,BlockType bt=table);			//向一个文件内分配块,返回文件号加块号
 	string allocFile();											//新创建一个文件,返回文件号
 	Block* getBlock(string fileid, string blockid);					//根据fileid和blockid查找块,注意内存泄露！在函数内new了新的block，使用后需要自己delete
-	file getFile(string fileid);									//根据fileid查找file
+	file* getFile(string fileid);									//根据fileid查找file
 	vector<string> multiplePut(vector<Expr*> records);			//自动将多条数据存入块中，返回各条记录的rowid
 	vector<Expr*> multipleGet(vector<string> rowids);			//根据多条rowid自动获取多条记录
 	Block* getLastAvailableBlock(string fileid);					//获取一个文件中最后一个可用的块

@@ -2,6 +2,7 @@
 #include<iostream>
 #include<fstream>
 #include <direct.h>
+#include <io.h>
 #include"BlockMgr.h"
 #include"sql\Expr.h"
 #include"Block.h"
@@ -12,7 +13,7 @@ Dict* Dict::instance = nullptr;
 
 Dict * Dict::getInstance()
 {
-	if (instance = nullptr) {
+	if (instance == nullptr) {
 		instance = new Dict;
 		instance->Init();
 	}
@@ -38,11 +39,11 @@ void Dict::InitDictionary()
 
 
 	
-	file file_user = blkmgr->getFile(blkmgr->allocFile());
-	file file_database = blkmgr->getFile(blkmgr->allocFile());
-	file file_class = blkmgr->getFile(blkmgr->allocFile());
-	file file_attribute = blkmgr->getFile(blkmgr->allocFile());
-	file file_index = blkmgr->getFile(blkmgr->allocFile());
+	file file_user = *blkmgr->getFile(blkmgr->allocFile());
+	file file_database = *blkmgr->getFile(blkmgr->allocFile());
+	file file_class = *blkmgr->getFile(blkmgr->allocFile());
+	file file_attribute = *blkmgr->getFile(blkmgr->allocFile());
+	file file_index = *blkmgr->getFile(blkmgr->allocFile());
 	
 
 	string block1;
@@ -119,10 +120,17 @@ void Dict::InitDictionary()
 
 void Dict::Init()
 {
+	_mkdir("data");
+	int isExist = _access("./data/firstblockid.bid", 0);
+	if (isExist == -1) {
+		InitDictionary();
+	}
+
 	Oid::GetInstance();						//新建oid计数
 
 	//将各个文件第一块的块号放到类中
 	ifstream fin("./data/firstblockid.bid", ios::in);
+
 	getline(fin, userblock1);
 
 	getline(fin, databaseblock1);
@@ -486,7 +494,7 @@ Oid::Oid(string tfilename) {
 
 Oid * Oid::GetInstance()
 {
-	if (instance = nullptr) {
+	if (instance == nullptr) {
 		instance = new Oid("./data/dict_oid.oid");
 		instance->Load();
 	}
@@ -528,7 +536,7 @@ User::User() {
 	userid = 0;
 	username = "";
 	code = "";
-	file file_user = file(1);
+	file file_user = file(0);
 	fileid = file_user.fileid64;
 }
 
@@ -589,8 +597,8 @@ Database::Database()
 {
 	datconnlimit = 1;		//默认最大并发访问1个用户
 	curconnect = 0;			//当前0个访问
-	file file_user = file(2);
-	fileid = file_user.fileid64;
+	file file_database = file(1);
+	fileid = file_database.fileid64;
 }
 
 int Database::GetOid() {
@@ -683,6 +691,7 @@ void Database::StoreToFile() {
 	//放入块中
 	string rowid;
 	Block* targetblock = BlockMgr::getInstance()->getLastAvailableBlock(fileid);		//取得file的最后一个可用的块
+	targetblock->setBlockType(dictionary);
 	targetblock->put(final);									//将数据放入可以放入的块
 	rowid = targetblock->generateRowID();						//得到rowid
 	targetblock->updateBuffer();
@@ -702,8 +711,8 @@ Class::Class()
 	hasindex = 0;
 	relnatts = 0;
 	haspkey = 0;
-	file file_user = file(3);
-	fileid = file_user.fileid64;
+	file file_class = file(2);
+	fileid = file_class.fileid64;
 }
 
 void Class::AddTuples(int num)
@@ -796,8 +805,8 @@ Attribute::Attribute() {
 	notnull = 0;
 	pkey = 0;
 	colcard = 0;
-	file file_user = file(4);
-	fileid = file_user.fileid64;
+	file file_attribute = file(3);
+	fileid = file_attribute.fileid64;
 }
 
 int Attribute::GetRelid() {
@@ -924,8 +933,8 @@ void Attribute::StoreToFile() {
 /*-------------------------------------------------*/
 Index::Index() {
 	indtype = 'a';
-	file file_user = file(5);
-	fileid = file_user.fileid64;
+	file file_index = file(4);
+	fileid = file_index.fileid64;
 }
 
 int Index::GetIndexrelid() {

@@ -175,7 +175,7 @@ int yyerror(YYLTYPE* llocp, SQLParserResult* result, yyscan_t scanner, const cha
 %token VIEW WHEN WITH ADD ALL AND ASC CSV END FOR INT KEY
 %token NOT OFF SET TBL TOP AS BY IF IN IS OF ON OR TO
 %token ARRAY CONCAT ILIKE SECOND MINUTE HOUR DAY MONTH YEAR
-%token TRUE FALSE
+%token TRUE FALSE DATABASES
 
 /*********************************
  ** Non-Terminal types (http://www.gnu.org/software/bison/manual/html_node/Type-Decl.html)
@@ -403,6 +403,9 @@ show_statement:
 			$$->schema = $3.schema;
 			$$->name = $3.name;
 		}
+	| SHOW DATABASES{
+		$$ = new ShowStatement(kShowSchemas);
+	}
 	;
 
 

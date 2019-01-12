@@ -9,9 +9,10 @@ string ServerSocket::recv_buf;
 string ServerSocket::send_buf;
 DWORD __stdcall ServerSocket::createThread(const LPVOID arg)
 {
+
 	int n = thread_num++;
 	cout << Timer::getCurTime() << ": 线程" << n << "已连接" << endl;
-
+	
 	F *temp = (F*)arg;
 	SOCKET sockConn = temp->sockConn;
 	recv_buf.clear();
@@ -19,7 +20,15 @@ DWORD __stdcall ServerSocket::createThread(const LPVOID arg)
 
 	while (1) {
 		// 收数据
-		char recvbuf[1000+5];
+		char recvbuf[1000 + 5];
+
+		while (1) {
+			//验证用户身份信息
+			recv(sockConn, recvbuf, 1000, 0);
+			recv_buf = recvbuf;
+		}
+
+		
 		recv(sockConn, recvbuf, 1000, 0);
 		recv_buf = recvbuf;
 		cout << Timer::getCurTime() <<": 来自线程" << n << "的请求 : ";

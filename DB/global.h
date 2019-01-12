@@ -26,7 +26,10 @@ const int MAXNUM_LEAF = MAXNUM_KEY;			// 最大叶子结点键值个数
 
 //block部分的全局变量
 #define BLOCK_SIZE 4096		//块大小为4096字节
-#define BLOCK_NUM 1024		//一个文件中最多有1048576个块
+#define BLOCK_NUM 1048576		//一个文件中最多有1048576个块
+
+//缓存区数据
+#define DATA_BUFFER_BLOCK_NUM 5//数据缓存区一共20块
 
 #define PCT_FREE_THRESHOLD 0.3f
 #define PCT_USED_THRESHOLD 0.7f

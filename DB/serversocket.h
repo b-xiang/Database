@@ -6,6 +6,7 @@
 // #include <thread>
 #include <mutex>
 #include <string>
+#include <map>
 #include <process.h>
 #include "global.h"
 #pragma comment(lib,"ws2_32.lib")
@@ -15,6 +16,8 @@ using namespace std;
 class ServerSocket // 服务端套接字
 {
 private:
+
+
 	SOCKET Listen_Sock;
 	// SOCKET sockConn;
 	static int thread_num; // 线程号

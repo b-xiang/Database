@@ -2,6 +2,8 @@
 #include "SQLParser.h"
 #include "SQLParserResult.h"
 #include "serversocket.h"
+#include "BufferMgr.h"
+#include "IdxMgr.h"
 #include "Dict.h"
 #include <string>
 #include <iostream>
@@ -40,5 +42,8 @@ void DB::terminate()
 {
 	s->release();
 	delete s;
+	BufferMgr::release();
+	IdxMgr::release();
+	Dict::release();
 	Dict::release();
 }

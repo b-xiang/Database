@@ -39,12 +39,14 @@ bool Block::isAbleToInput(Expr* content)
 bool Block::put(Expr* content)
 {
 	putStrategy* str=nullptr;
-	if (content->type == kExprLiteralInt) 
+	if (content->type == kExprLiteralInt)
 		str = new putIntStrategy;
 	else if (content->type == kExprLiteralFloat)
 		str = new putFloatStrategy;
 	else if (content->type == kExprLiteralString)
 		str = new putStringStrategy;
+	else if (content->type == kExprArray)
+		str = new putArrayStrategy;
 	assert(str);
 	bool res = str->put(this, content);
 	delete str;
@@ -249,6 +251,16 @@ bool Block::isFull()
 	return false;
 }
 
+void Block::setBlockType(BlockType blkType)
+{
+	blockType = blkType;
+}
+
+BlockType Block::getBlockType()
+{
+	return blockType;
+}
+
 const char * Block::getFileid()
 {
 	return fileid;
@@ -344,7 +356,7 @@ bool Block::putArrayStrategy::put(Block * blk, Expr * e)
 		delete str;
 		str = nullptr;
 		str = Block::getPutStrategy(item->type);
-		str->put(blk, e);
+		str->put(blk, item);
 	}
 	return true;
 }

@@ -34,6 +34,7 @@ using namespace hsql;
 using namespace std;
 
 int main() {
+	system("clear.bat");
 	char buff[1024];
 	string s;
 	SQLParserResult res;

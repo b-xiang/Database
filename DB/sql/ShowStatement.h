@@ -6,23 +6,24 @@
 // Note: Implementations of constructors and destructors can be found in statements.cpp.
 namespace hsql {
 
-  enum ShowType {
-    kShowColumns,
-    kShowTables
-  };
+	enum ShowType {
+		kShowColumns,
+		kShowTables,
+		kShowSchemas
+	};
 
-  // Represents SQL SHOW statements.
-  // Example "SHOW TABLES;"
-  struct ShowStatement : SQLStatement {
+	// Represents SQL SHOW statements.
+	// Example "SHOW TABLES;"
+	struct ShowStatement : SQLStatement {
 
-    ShowStatement(ShowType type);
-    virtual ~ShowStatement();
-	virtual bool execute();
+		ShowStatement(ShowType type);
+		virtual ~ShowStatement();
+		virtual bool execute();
 
-    ShowType type;
-    char* schema;
-    char* name;
-  };
+		ShowType type;
+		char* schema;
+		char* name;
+	};
 
 } // namespace hsql
 #endif

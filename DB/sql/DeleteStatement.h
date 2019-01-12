@@ -6,18 +6,18 @@
 // Note: Implementations of constructors and destructors can be found in statements.cpp.
 namespace hsql {
 
-  // Represents SQL Delete statements.
-  // Example: "DELETE FROM students WHERE grade > 3.0"
-  // Note: if (expr == nullptr) => delete all rows (truncate)
-  struct DeleteStatement : SQLStatement {
-    DeleteStatement();
-    virtual ~DeleteStatement();
-	virtual bool execute();
+	// Represents SQL Delete statements.
+	// Example: "DELETE FROM students WHERE grade > 3.0"
+	// Note: if (expr == nullptr) => delete all rows (truncate)
+	struct DeleteStatement : SQLStatement {
+		DeleteStatement();
+		virtual ~DeleteStatement();
+		virtual bool execute();
 
-    char* schema;
-    char* tableName;
-    Expr* expr;
-  };
+		char* schema;
+		char* tableName;
+		Expr* expr;
+	};
 
 } // namespace hsql
 
