@@ -215,7 +215,7 @@ Database*	Dict::GetDatabase(User* user, string dbname) {
 	//遍历所有块，同时在文件中找到对应项目，并且判断对应的userid和dbname是否相等
 	do {
 		Block* tempblock = BlockMgr::getInstance()->getBlock(targetdatabase->fileid, tempblockid);
-		vector<Expr*> tempexpr = tempblock->get(0, tempblock->GetRecordnum());
+		vector<Expr*> tempexpr = tempblock->get(0, tempblock->GetRecordnum()-1);
 		vector<Expr*>::iterator iter;
 		for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
 			tempuserid = (*((*iter)->exprList))[2]->ival;
@@ -296,7 +296,7 @@ Class*	Dict::GetClass(Database* tdatabase, string relationname) {
 	//遍历所有块，同时在文件中找到对应项目，并且判断databaseid和relationname是否相等
 	do {
 		Block* tempblock = BlockMgr::getInstance()->getBlock(targetclass->fileid, tempblockid);
-		vector<Expr*> tempexpr = tempblock->get(0, tempblock->GetRecordnum());
+		vector<Expr*> tempexpr = tempblock->get(0, tempblock->GetRecordnum()-1);
 		vector<Expr*>::iterator iter;
 		for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
 			temp_databaseid = (*((*iter)->exprList))[1]->ival;
@@ -354,7 +354,7 @@ vector<Attribute*>	Dict::GetAttribute(Class* table) {
 
 		delete tempattritube;
 
-		vector<Expr*> tempexpr = tempblock->get(0, tempblock->GetRecordnum());
+		vector<Expr*> tempexpr = tempblock->get(0, tempblock->GetRecordnum()-1);
 
 		vector<Expr*>::iterator iter;
 		for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
@@ -412,7 +412,7 @@ Attribute*	Dict::GetAttribute(int attritubeid) {
 	do {
 		Block* tempblock = BlockMgr::getInstance()->getBlock(targetattribute->fileid, tempblockid);
 
-		vector<Expr*> tempexpr = tempblock->get(0, tempblock->GetRecordnum());
+		vector<Expr*> tempexpr = tempblock->get(0, tempblock->GetRecordnum()-1);
 		vector<Expr*>::iterator iter;
 		for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
 
@@ -475,7 +475,7 @@ Index*	Dict::GetIndex(Class* tindex) {
 	do {
 		Block* tempblock = BlockMgr::getInstance()->getBlock(targetindex->fileid, tempblockid);
 
-		vector<Expr*> tempexpr = tempblock->get(0, tempblock->GetRecordnum());
+		vector<Expr*> tempexpr = tempblock->get(0, tempblock->GetRecordnum()-1);
 		vector<Expr*>::iterator iter;
 		for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
 
