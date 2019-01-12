@@ -1,4 +1,6 @@
 #include "statements.h"
+#include <iostream>
+using namespace std;
 
 namespace hsql {
 
@@ -94,7 +96,9 @@ namespace hsql {
 
   bool CreateStatement::execute()
   {
-	  return false;
+	  cout << "create statement executed" << endl;
+
+	  return true;
   }
 
   // DeleteStatement

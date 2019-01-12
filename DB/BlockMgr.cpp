@@ -22,7 +22,7 @@ BlockMgr::~BlockMgr()
 
 bool BlockMgr::isFileFull(string fileid)
 {
-	return getFile(fileid)->blockNum >= BLOCK_NUM;
+	return getFile(fileid).blockNum >= BLOCK_NUM;
 }
 
 bool BlockMgr::isAbleToInput(string fileid, string blockid, Expr* content)
@@ -40,12 +40,12 @@ bool BlockMgr::isAbleToInput(Block* block, Expr* content)
 
 string BlockMgr::allocBlock(string fileid, BlockType bt)
 {
-	file* curfile = getFile(fileid);
-	string blkid = Conv64::to_64(curfile->blockNum,6);
-	Block *blk = new Block(curfile->fileid64, blkid.c_str(),bt);
+	file curfile = getFile(fileid);
+	string blkid = Conv64::to_64(curfile.blockNum, 6);
+	Block *blk = new Block(curfile.fileid64, blkid.c_str(), bt);
 	blk->writeToFile();
 	delete blk;
-	curfile->blockNum++;
+	curfile.blockNum++;
 	return blkid;
 }
 
@@ -56,9 +56,9 @@ string BlockMgr::allocFile()
 		if (item.fileid > maxid)
 			maxid = item.fileid;
 	}
-	file newfile=file(maxid + 1);
+	file newfile = file(maxid + 1);
 	files.push_back(newfile);
-	return files[files.size()-1].fileid64;
+	return files[files.size() - 1].fileid64;
 }
 
 Block * BlockMgr::getBlock(string fileid, string blockid)
@@ -69,19 +69,18 @@ Block * BlockMgr::getBlock(string fileid, string blockid)
 	return blk;
 }
 
-file * BlockMgr::getFile(string fileid)
+file BlockMgr::getFile(string fileid)
 {
-	for (int i = 0; i < files.size();i++) {
+	for (int i = 0; i < files.size(); i++) {
 		if (strcmp(files[i].fileid64, fileid.c_str()) == 0)
-			return &files[i];
+			return files[i];
 	}
-	return nullptr;
 }
 
 vector<string> BlockMgr::multiplePut(vector<Expr*> records)
 {
 	vector<string> res;
-	
+
 	file* curfile = getLastAvailableFile();
 	if (curfile == nullptr) {
 		allocFile();
@@ -94,7 +93,7 @@ vector<string> BlockMgr::multiplePut(vector<Expr*> records)
 	}
 
 	for (auto r : records) {
-		if (isFileFull(curfile->fileid64)&&curblk->isFull()) {
+		if (isFileFull(curfile->fileid64) && curblk->isFull()) {
 			allocFile();
 			curfile = getLastAvailableFile();
 			releaseBlk(curblk);
@@ -112,7 +111,7 @@ vector<string> BlockMgr::multiplePut(vector<Expr*> records)
 			curblk->put(r);
 		}
 		else {
-			if(isFileFull(curfile->fileid64)) {
+			if (isFileFull(curfile->fileid64)) {
 				allocFile();
 				curfile = getLastAvailableFile();
 				releaseBlk(curblk);
@@ -136,7 +135,7 @@ vector<Expr*> BlockMgr::multipleGet(vector<string> rowids)
 {
 	vector<Expr*> res;
 	string hisdoi, hisfid, hisbid, hisrid;
-	file* curfile = nullptr;
+	file curfile;
 	Block* curblk = nullptr;
 	for (auto id : rowids) {
 		string s(id);
@@ -154,7 +153,7 @@ vector<Expr*> BlockMgr::multipleGet(vector<string> rowids)
 			hisbid = bid;
 			releaseBlk(curblk);
 			curblk = nullptr;
-			curblk = getBlock(curfile->fileid64, bid);
+			curblk = getBlock(curfile.fileid64, bid);
 		}
 		res.push_back(curblk->get(id.c_str()));
 	}
@@ -168,16 +167,16 @@ file* BlockMgr::getLastAvailableFile()
 	file* curfile = &files[files.size() - 1];
 	if (!isFileFull(curfile->fileid64))
 		return curfile;
-	else 
+	else
 		return nullptr;
 }
 
 Block * BlockMgr::getLastAvailableBlock(string fileid)
 {
-	file* curfile = getFile(fileid);
-	if (curfile->blockNum == 0)
+	file curfile = getFile(fileid);
+	if (curfile.blockNum == 0)
 		allocBlock(fileid);
-	Block * curblk = new Block(fileid,Conv64::to_64(curfile->blockNum-1,3));
+	Block * curblk = new Block(fileid, Conv64::to_64(curfile.blockNum - 1, 3));
 	curblk->readFromFile();
 	curblk->updateVar();
 	if (!curblk->isFull())

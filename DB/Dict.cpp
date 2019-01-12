@@ -1,9 +1,11 @@
 #include "Dict.h"
 #include<iostream>
 #include<fstream>
+#include <direct.h>
 #include"BlockMgr.h"
 #include"sql\Expr.h"
 #include"Block.h"
+
 using namespace std;
 
 Dict* Dict::instance = nullptr;
@@ -27,16 +29,21 @@ void Dict::release()
 
 void Dict::InitDictionary()
 {
+	BlockMgr* blkmgr = BlockMgr::getInstance();
+	_mkdir("data");
 	ofstream fout("./data/dict_oid.oid", ios::out);	//创建oid文件
 	fout << 1;
 	fout.close();
 	fout.clear();
 
-	file file_user = file(1);
-	file file_database = file(2);
-	file file_class = file(3);
-	file file_attribute = file(4);
-	file file_index = file(5);
+
+	
+	file file_user = blkmgr->getFile(blkmgr->allocFile());
+	file file_database = blkmgr->getFile(blkmgr->allocFile());
+	file file_class = blkmgr->getFile(blkmgr->allocFile());
+	file file_attribute = blkmgr->getFile(blkmgr->allocFile());
+	file file_index = blkmgr->getFile(blkmgr->allocFile());
+	
 
 	string block1;
 	string fileid = file_user.fileid64;

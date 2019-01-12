@@ -1,10 +1,63 @@
 #include "DB.h"
 //#define DEBUG
+#define STAND_ALONE
+//#define RELEASE
 
 
-#ifndef DEBUG
+#ifdef DEBUG
+#include "BlockMgr.h"
+#include "vector"
+#include "Block.h"
+#include "sql/Expr.h"
+#include <Windows.h>
+#include <iostream>
+#include "SQLParser.h"
+#include "SQLParserResult.h"
+#include "Dict.h"
+#include "Timer.h"
+using namespace std;
+using namespace hsql;
 int main() {
-	
+	system("clear.bat");
+	Dict* dict=Dict::getInstance();
+	dict->InitDictionary();
+	system("pause");
+}
+
+#endif	//	DEBUG
+
+#ifdef STAND_ALONE
+#include <string>
+#include <iostream>
+#include "SQLParser.h"
+using namespace hsql;
+using namespace std;
+
+int main() {
+	char buff[1024];
+	string s;
+	SQLParserResult res;
+	while (true) {
+		cout << ">";
+		cin.getline(buff,1024);
+		s = string(buff);
+		if (s == "q")
+			break;
+		SQLParser::parse(s, &res);
+		if (!res.isValid()) {
+			cout << res.errorMsg() << endl;
+		}
+		for (auto stm : res.getStatements()) {
+			stm->execute();
+		}
+	}
+	return 0;
+}
+#endif // STAND_ALONE
+
+#ifdef RELEASE
+int main() {
+
 	DB * db = DB::getInstance();
 
 	db->init();
@@ -14,38 +67,4 @@ int main() {
 	DB::release();
 	return 0;
 }
-#else
-#include "BlockMgr.h"
-#include "vector"
-#include "Block.h"
-#include "sql/Expr.h"
-#include <Windows.h>
-#include <iostream>
-#include "SQLParser.h"
-#include "SQLParserResult.h"
-#include "Timer.h"
-using namespace std;
-using namespace hsql;
-int main() {
-	system("clear.bat");
-	vector<Expr*> src;
-	vector<string> rowid;
-	vector<Expr*> res;
-	for (int i = 0; i < 100; i++) {
-		src.push_back(Expr::makeLiteral((int64_t)i));
-		src.push_back(Expr::makeLiteral("hello world"));
-		src.push_back(Expr::makeLiteral(3.14*i));
-	}
-	rowid = BlockMgr::getInstance()->multiplePut(src);
-	res = BlockMgr::getInstance()->multipleGet(rowid);
-	for (auto r : res) {
-		if (r->isType(kExprLiteralInt))
-			cout << r->ival << endl;
-		else if (r->isType(kExprLiteralFloat))
-			cout << r->fval << endl;
-		else if (r->isType(kExprLiteralString))
-			cout << r->name << endl;
-	}
-	system("pause");
-}
-#endif // !DEBUG
+#endif // RELEASE
