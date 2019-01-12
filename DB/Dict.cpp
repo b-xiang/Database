@@ -38,13 +38,13 @@ void Dict::InitDictionary()
 	fout.clear();
 
 
-	
+
 	file file_user = *blkmgr->getFile(blkmgr->allocFile());
 	file file_database = *blkmgr->getFile(blkmgr->allocFile());
 	file file_class = *blkmgr->getFile(blkmgr->allocFile());
 	file file_attribute = *blkmgr->getFile(blkmgr->allocFile());
 	file file_index = *blkmgr->getFile(blkmgr->allocFile());
-	
+
 
 	string block1;
 	string fileid = file_user.fileid64;
@@ -124,6 +124,11 @@ void Dict::Init()
 	int isExist = _access("./data/firstblockid.bid", 0);
 	if (isExist == -1) {
 		InitDictionary();
+		User* user = CreateUser();
+		user->SetUserid(DeliverOid());
+		user->SetUsername("default");
+		user->SetCode("default");
+		StoreUser(user);
 	}
 
 	Oid::GetInstance();						//新建oid计数
@@ -179,7 +184,7 @@ User*	Dict::GetUser(string username) {
 	//遍历所有块，同时在文件中找到对应项目，并且判断username是否相等
 	do {
 		Block* tempblock = BlockMgr::getInstance()->getBlock(targetuser->fileid, tempblockid);
-		vector<Expr*> tempexpr = tempblock->get(0, tempblock->GetRecordnum());
+		vector<Expr*> tempexpr = tempblock->get(0, tempblock->GetRecordnum()-1);
 		vector<Expr*>::iterator iter;
 		for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
 			tempusername = (*((*iter)->exprList))[1]->name;
@@ -235,6 +240,47 @@ Database*	Dict::GetDatabase(User* user, string dbname) {
 	} while (tempblockid != "");						//如果下一个块的块号是空的话，表示所有文件都遍历完了
 
 	return nullptr;			//如果都遍历完了还没找到，那么不存在这一项
+}
+
+
+vector<Database*> Dict::getDatabases(User* user)
+{
+	vector<Database*> res;
+	Database* targetdatabase = CreateDatabase();			//创建一个空的User用于装结果
+
+	int userid = user->GetUserid();
+
+	int tempuserid;
+	string tempdaname;
+
+	string tempblockid = databaseblock1;			//遍历文件用的块
+
+	//遍历所有块，同时在文件中找到对应项目，并且判断对应的userid和dbname是否相等
+	do {
+		Block* tempblock = BlockMgr::getInstance()->getBlock(targetdatabase->fileid, tempblockid);
+		vector<Expr*> tempexpr = tempblock->get(0, tempblock->GetRecordnum()-1);
+		vector<Expr*>::iterator iter;
+		for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
+			tempuserid = (*((*iter)->exprList))[2]->ival;
+			tempdaname = (*((*iter)->exprList))[1]->name;
+
+			if (tempuserid == userid) {		//找到
+				targetdatabase->oid = ((*((*iter)->exprList))[0]->ival);
+				targetdatabase->datname = ((*((*iter)->exprList))[1]->name);
+				targetdatabase->ownerid = ((*((*iter)->exprList))[2]->ival);
+				targetdatabase->datconnlimit = ((*((*iter)->exprList))[3]->ival);
+				targetdatabase->curconnect = ((*((*iter)->exprList))[4]->ival);
+				vector<Expr*> gg = *((*((*iter)->exprList))[5]->exprList);
+				vector<Expr*>::iterator it;
+				for (it = gg.begin(); it != gg.end(); it++) {
+					targetdatabase->datacl.push_back((*it)->ival);
+				}
+				res.push_back(targetdatabase);
+			}
+		}
+		tempblockid = tempblock->GetNextblockid();
+	} while (tempblockid != "");						//如果下一个块的块号是空的话，表示所有文件都遍历完了
+	return res;
 }
 
 

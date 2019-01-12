@@ -25,13 +25,35 @@ MySocket::MySocket()
 	{
 		cout << "connect error !" << endl;
 		closesocket(sclient);
-		return;
+		exit(1);
 	}
 }
 
 void MySocket::run()
 {
 	//创建客户端套接字
+	while (1) {//身份信息验证
+		printf("username:");
+		string data;
+		getline(cin, data);
+		const char * sendData2;
+		sendData2 = data.c_str(); //string转const char*
+		send(sclient, sendData2, strlen(sendData2) + 1, 0);
+		printf("password:");
+		getline(cin, data);
+		sendData2 = data.c_str(); //string转const char*
+		send(sclient, sendData2, strlen(sendData2) + 1, 0);
+
+		char recData[Global::recv_buf_size + 5];
+		int ret = recv(sclient, recData, Global::recv_buf_size, 0);
+		if (ret > 0) {
+			recData[ret] = 0x00;
+			if (string(recData)=="pass")
+				break;
+			else
+				printf(recData);
+		}
+	}
 	while (1)
 	{
 		// 输入exit退出

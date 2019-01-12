@@ -287,6 +287,106 @@ Expr* Block::get(int idx)
 	return res;
 }
 
+string Block::encodeExprArray(Expr * e)
+{
+	char arrbuffer[BLOCK_SIZE];
+	memset(arrbuffer, 0, sizeof(arrbuffer));
+	int pos = 0;
+	for (auto expr : *e->exprList) {
+		arrbuffer[pos++] = expr->type;
+	}
+	arrbuffer[pos++] = '#';
+	for (auto expr : *e->exprList) {
+		if (expr->type == kExprLiteralInt) {
+			string content = Conv64::to_64(e->ival);
+			strcpy(arrbuffer+pos, content.c_str());
+			pos += content.size();
+			pos++;
+		}
+		else if (expr->type == kExprLiteralFloat) {
+			memcpy(arrbuffer+pos, &e->fval, sizeof(double));
+			pos += sizeof(double);
+		}
+		else if (expr->type == kExprLiteralString) {
+			char buff[BLOCK_SIZE];
+			memset(buff, 0, sizeof(buff));
+			b64_encode(expr->name, strlen(expr->name), buff);
+			strcpy(arrbuffer+pos, buff);
+			pos += strlen(buff);
+			pos++;
+		}
+		else if (expr->type == kExprArray) {
+			string encode=encodeExprArray(expr);
+			strcpy(arrbuffer + pos, encode.data());
+			pos += encode.size();
+			pos++;
+		}
+	}
+	char dst[BLOCK_SIZE];
+	memset(dst, 0, sizeof(dst));
+	b64_encode(arrbuffer, pos-1, dst);
+	return string(dst);
+}
+
+Expr* Block::decodeExprArray(string str)
+{
+	vector<Expr*>* res=new vector<Expr*>();
+	if (str == "")
+		return Expr::makeArray(res);
+	char buff[BLOCK_SIZE];
+	memset(buff, 0, sizeof(buff));
+	b64_decode(str.data(), str.length(), buff);
+
+	int pos = 0;
+	vector<ExprType> types;
+	while (buff[pos] != '#') {
+		types.push_back((ExprType)buff[pos]);
+		pos++;
+	}
+	pos++;
+	for (int i = 0; i < types.size(); i++) {
+		if (types[i] == kExprArray) {
+			char arrbuff[BLOCK_SIZE];
+			memset(arrbuff, 0, sizeof(arrbuff));
+			strcpy(arrbuff, buff + pos);
+			res->push_back(decodeExprArray(arrbuff));
+			pos += strlen(arrbuff) + 1;
+		}
+		else if (types[i] == kExprLiteralInt) {
+			int len = strlen(buff + pos);
+			char arrbuff[BLOCK_SIZE];
+			char decode[BLOCK_SIZE];
+			memset(arrbuff, 0, sizeof(arrbuff));
+			memset(decode, 0, sizeof(decode));
+			strcpy(arrbuff, buff + pos);
+			strcpy(decode, Conv64::to_10(buff).c_str());
+			Expr* e = Expr::makeLiteral((int64_t)atoi(decode));
+			res->push_back(e);
+			pos += len + 1;
+		}
+		else if (types[i] == kExprLiteralFloat) {
+			int len = sizeof(double);
+			double d;
+			memcpy(&d, buff + pos, sizeof(d));
+			Expr* e = Expr::makeLiteral(d);
+			res->push_back(e);
+			pos += len;
+		}
+		else if (types[i] == kExprLiteralString) {
+			char arrbuff[BLOCK_SIZE];
+			char decode[BLOCK_SIZE];
+			memset(arrbuff, 0, sizeof(arrbuff));
+			memset(decode, 0, sizeof(decode));
+			strcpy(arrbuff, buff + pos);
+			b64_decode(arrbuff, strlen(arrbuff), decode);
+			Expr* e = Expr::makeLiteral(decode);
+			res->push_back(e);
+			pos += strlen(arrbuff)+1;
+		}
+	}
+	return Expr::makeArray(res);
+}
+
 vector<Expr*> Block::get(int fromidx, int toidx)
 {
 	vector<Expr*> res;
@@ -351,13 +451,13 @@ bool Block::putStringStrategy::put(Block *blk, Expr* e)
 
 bool Block::putArrayStrategy::put(Block * blk, Expr * e)
 {
-	putStrategy* str=nullptr;
-	for (auto item : *e->exprList) {
-		delete str;
-		str = nullptr;
-		str = Block::getPutStrategy(item->type);
-		str->put(blk, item);
-	}
+	string res = encodeExprArray(e);
+	blk->bodyBegin = blk->bodyBegin - strlen(res.data()) - 1;
+	strcpy(blk->buffer + blk->bodyBegin, res.data());
+	blk->recordnum++;
+	blk->dataType.push_back(e->type);
+	blk->recordpos.push_back(blk->bodyBegin);
+	blk->updateBuffer();
 	return true;
 }
 
@@ -399,11 +499,10 @@ Expr* Block::getIntStrategy::get(Block * blk, int idx)
 
 Expr * Block::getArrayStrategy::get(Block * blk, int idx)
 {
-	vector<Expr*>* vec = new vector<Expr*>;
-	int n = 0;//需要从数据字典中获取
-	for (int i = 0; i < n; i++) {
-		getStrategy* str = getGetStrategy(blk->dataType[idx + i]);
-		vec->push_back(str->get(blk,idx+i));
-	}
-	return Expr::makeArray(vec);
+	vector<Expr*> vec;
+	char buff[BLOCK_SIZE];
+	memset(buff, 0, sizeof(buff));
+	int from = blk->recordpos[idx];
+	strcpy(buff, blk->buffer + from);
+	return decodeExprArray(buff);
 }

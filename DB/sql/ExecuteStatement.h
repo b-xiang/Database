@@ -3,6 +3,7 @@
 
 #include "SQLStatement.h"
 
+
 namespace hsql {
 
   // Represents SQL Execute statements.
@@ -10,7 +11,7 @@ namespace hsql {
   struct ExecuteStatement : SQLStatement {
     ExecuteStatement();
     virtual ~ExecuteStatement();
-	virtual bool execute();
+	virtual bool execute(std::string username="default");
 
     char* name;
     std::vector<Expr*>* parameters;

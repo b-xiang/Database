@@ -1,48 +1,69 @@
 #include "serversocket.h"
 #include "SQLParser.h"
 #include "SQLParserResult.h"
+#include "Dict.h"
 #include "Timer.h"
 using namespace hsql;
 
+map<int, string> ServerSocket::curUserList;
 int ServerSocket::thread_num = 0;
 string ServerSocket::recv_buf;
 string ServerSocket::send_buf;
 DWORD __stdcall ServerSocket::createThread(const LPVOID arg)
 {
-
+	string username;
+	string password;
 	int n = thread_num++;
-	cout << Timer::getCurTime() << ": 线程" << n << "已连接" << endl;
 	
 	F *temp = (F*)arg;
 	SOCKET sockConn = temp->sockConn;
 	recv_buf.clear();
-	
+
+	while (1) {
+		//验证用户身份信息
+		char recvbuf[1000 + 5];
+		recv(sockConn, recvbuf, 1000, 0);
+		if (recv_buf == "exit") 
+			return 0;
+		username = recvbuf;
+		recv(sockConn, recvbuf, 1000, 0);
+		if (recv_buf == "exit")
+			return 0;
+		password = recvbuf;
+		if (true)//用户信息验证//////////////////////////////////////////
+		{
+			curUserList[n] = username;
+			send_buf.clear();
+			put_in_buf("pass");
+			::send(sockConn, send_buf.c_str(), send_buf.size() + 1, 0);
+			cout << Timer::getCurTime() << ": 用户" << curUserList[n] << "已连接" << endl;
+			break;
+		}
+		else {
+			send_buf.clear();
+			put_in_buf("Incorrect username or password. \n");
+			::send(sockConn, send_buf.c_str(), send_buf.size() + 1, 0);
+		}
+	}
+
 
 	while (1) {
 		// 收数据
 		char recvbuf[1000 + 5];
-
-		while (1) {
-			//验证用户身份信息
-			recv(sockConn, recvbuf, 1000, 0);
-			recv_buf = recvbuf;
-		}
-
-		
 		recv(sockConn, recvbuf, 1000, 0);
 		recv_buf = recvbuf;
-		cout << Timer::getCurTime() <<": 来自线程" << n << "的请求 : ";
+		cout << Timer::getCurTime() <<": 来自用户" << curUserList[n] << "的请求 : ";
 		cout << recv_buf << endl;
 
 		if (recv_buf == "exit") {
-			cout << Timer::getCurTime() << ": 线程" << n << "退出 " << endl;
-
+			cout << Timer::getCurTime() << ": 用户" << curUserList[n] << "退出 " << endl;
+			curUserList.erase(n);
 			break;// 应该是客户端结束 服务端退出线程
 		}
 			
 		send_buf.clear();
 
-		getAndUse();
+		getAndUse(curUserList[n]);
 
 		// 发数据
 		
@@ -129,9 +150,8 @@ void ServerSocket::release()
 }
 
 
-void ServerSocket::getAndUse()
+void ServerSocket::getAndUse(string username)
 {
-
 	SQLParserResult res;
 	SQLParser::parse(string(recv_buf), &res);
 	if (!res.isValid()) {
@@ -141,7 +161,7 @@ void ServerSocket::getAndUse()
 		return;
 	}
 	for (auto stm : res.getStatements()) {
-		stm->execute();
+		stm->execute(username);
 	}
 	put_in_buf("服务器处理返回的结果\n");
 }

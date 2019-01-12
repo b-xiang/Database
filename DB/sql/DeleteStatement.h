@@ -12,7 +12,7 @@ namespace hsql {
 	struct DeleteStatement : SQLStatement {
 		DeleteStatement();
 		virtual ~DeleteStatement();
-		virtual bool execute();
+		virtual bool execute(std::string username="default");
 
 		char* schema;
 		char* tableName;

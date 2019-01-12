@@ -81,6 +81,8 @@ private:
 	void writeToBuffer(int begin, char* text);
 	string getFileName();
 	Expr* get(int idx);
+	static string encodeExprArray(Expr* e);
+	static Expr* decodeExprArray(string str);
 	
 private:
 	class putStrategy {

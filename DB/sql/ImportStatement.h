@@ -4,22 +4,22 @@
 #include "SQLStatement.h"
 
 namespace hsql {
-  enum ImportType {
-    kImportCSV,
-    kImportTbl, // Hyrise file format
-  };
+	enum ImportType {
+		kImportCSV,
+		kImportTbl, // Hyrise file format
+	};
 
-  // Represents SQL Import statements.
-  struct ImportStatement : SQLStatement {
-    ImportStatement(ImportType type);
-    virtual ~ImportStatement();
-	virtual bool execute();
+	// Represents SQL Import statements.
+	struct ImportStatement : SQLStatement {
+		ImportStatement(ImportType type);
+		virtual ~ImportStatement();
+		virtual bool execute(std::string username = "");
 
-    ImportType type;
-    char* filePath;
-    char* schema;
-    char* tableName;
-  };
+		ImportType type;
+		char* filePath;
+		char* schema;
+		char* tableName;
+	};
 
 } // namespace hsql
 

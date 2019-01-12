@@ -323,6 +323,7 @@ public:
 
 	User*	GetUser(string username);		//从用户表中，根据username找到user对象
 	Database*	GetDatabase(User* user, string dbname);	//从数据库表中，根据数据库名字and数据库所有者找到数据库
+	vector<Database*> getDatabases(User* user);
 	Class*	GetClass(Database* tdatabase, string relationname);	//从class表中，根据数据库和relation的名字找到表、索引
 	vector<Attribute*>	GetAttribute(Class* table);		//从attribute表中，根据表的oid，找到该表所有属性
 	Attribute*	GetAttribute(int attritubeid);			//从attribute表中，根据属性oid找到属性

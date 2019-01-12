@@ -95,7 +95,7 @@ namespace hsql {
 		}
 	}
 
-	bool CreateStatement::execute()
+	bool CreateStatement::execute(string username)
 	{
 		Dict* dict = Dict::getInstance();
 		switch (type)
@@ -110,10 +110,12 @@ namespace hsql {
 			break;
 		case hsql::kCreateSchema: {
 			Database* db=dict->CreateDatabase();
+			User* user = dict->GetUser(username);
+			db->SetOwnerid(user->GetUserid());
 			db->SetDatName(schema);
-			db->SetOwnerid(0);
 			db->SetOid(dict->DeliverOid());
 			dict->StoreDatabase(db);
+			delete user;
 			delete db;
 			break;
 		}
@@ -136,7 +138,7 @@ namespace hsql {
 		delete expr;
 	}
 
-	bool DeleteStatement::execute()
+	bool DeleteStatement::execute(string username)
 	{
 		return false;
 	}
@@ -153,7 +155,7 @@ namespace hsql {
 		free(name);
 	}
 
-	bool DropStatement::execute()
+	bool DropStatement::execute(string username)
 	{
 		switch (type)
 		{
@@ -190,7 +192,7 @@ namespace hsql {
 		}
 	}
 
-	bool ExecuteStatement::execute()
+	bool ExecuteStatement::execute(string username)
 	{
 		return false;
 	}
@@ -209,7 +211,7 @@ namespace hsql {
 		free(tableName);
 	}
 
-	bool ImportStatement::execute()
+	bool ImportStatement::execute(string username)
 	{
 		switch (type)
 		{
@@ -253,7 +255,7 @@ namespace hsql {
 		}
 	}
 
-	bool InsertStatement::execute()
+	bool InsertStatement::execute(string username)
 	{
 		switch (type)
 		{
@@ -279,16 +281,24 @@ namespace hsql {
 		free(name);
 	}
 
-	bool ShowStatement::execute()
+	bool ShowStatement::execute(string username)
 	{
+		Dict* dict = Dict::getInstance();
 		switch (type)
 		{
 		case hsql::kShowColumns:
 			break;
 		case hsql::kShowTables:
 			break;
-		case hsql::kShowSchemas:
+		case hsql::kShowSchemas: {
+			User* user=dict->GetUser(username);
+			auto vec= dict->getDatabases(user);
+			for (auto db : vec) {
+				cout << db->datname << endl;
+			}
+			delete user;
 			break;
+		}
 		default:
 			break;
 		}
@@ -362,7 +372,7 @@ namespace hsql {
 		}
 	}
 
-	bool SelectStatement::execute()
+	bool SelectStatement::execute(string username)
 	{
 		return false;
 	}
@@ -388,7 +398,7 @@ namespace hsql {
 		}
 	}
 
-	bool UpdateStatement::execute()
+	bool UpdateStatement::execute(string username)
 	{
 		return true;
 	}
@@ -403,7 +413,7 @@ namespace hsql {
 		free(name);
 		free(query);
 	}
-	bool PrepareStatement::execute()
+	bool PrepareStatement::execute(string username)
 	{
 		return false;
 	}

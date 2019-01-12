@@ -19,8 +19,6 @@ using namespace std;
 using namespace hsql;
 int main() {
 	system("clear.bat");
-	Dict* dict=Dict::getInstance();
-	dict->InitDictionary();
 	system("pause");
 }
 
@@ -35,10 +33,11 @@ using namespace std;
 
 int main() {
 	system("clear.bat");
+	
 	char buff[1024];
 	string s;
-	SQLParserResult res;
 	while (true) {
+		SQLParserResult res;
 		cout << ">";
 		cin.getline(buff,1024);
 		s = string(buff);

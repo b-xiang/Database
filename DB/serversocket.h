@@ -16,13 +16,13 @@ using namespace std;
 class ServerSocket // 服务端套接字
 {
 private:
-
+	static map<int, string> curUserList;
 
 	SOCKET Listen_Sock;
 	// SOCKET sockConn;
 	static int thread_num; // 线程号
 	static DWORD WINAPI createThread(const LPVOID arg);
-	static void getAndUse();
+	static void getAndUse(string username);
 	static string recv_buf;// 收到的来自客户端的SQL
 	static string send_buf;// 发送到客户端让其显示的内容
 	static void put_in_buf(const char str[]);

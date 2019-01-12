@@ -20,7 +20,7 @@ namespace hsql {
 
 		DropStatement(DropType type);
 		virtual ~DropStatement();
-		virtual bool execute();
+		virtual bool execute(std::string username = "");
 
 		DropType type;
 		bool ifExists;

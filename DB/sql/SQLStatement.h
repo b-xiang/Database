@@ -2,7 +2,7 @@
 #define SQLPARSER_SQLSTATEMENT_H
 
 #include <vector>
-
+#include <string>
 #include "Expr.h"
 
 namespace hsql {
@@ -34,7 +34,7 @@ namespace hsql {
 
 		size_t stringLength;  //SQLÓï¾ä³¤¶È
 		std::vector<Expr*>* hints;
-		virtual bool execute() = 0;//Ö´ÐÐÓï¾ä
+		virtual bool execute(std::string username="default") = 0;//Ö´ÐÐÓï¾ä
 	private:
 		StatementType type_;
 	};

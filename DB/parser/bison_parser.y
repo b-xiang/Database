@@ -403,7 +403,7 @@ show_statement:
 			$$->schema = $3.schema;
 			$$->name = $3.name;
 		}
-	| SHOW DATABASES{
+	| SHOW SCHEMAS {
 		$$ = new ShowStatement(kShowSchemas);
 	}
 	;
