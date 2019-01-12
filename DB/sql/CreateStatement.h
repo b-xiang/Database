@@ -45,7 +45,8 @@ namespace hsql {
 	enum CreateType {
 		kCreateTable,
 		kCreateTableFromTbl, // Hyrise file format
-		kCreateView
+		kCreateView,
+		kCreateSchema
 	};
 
 	// Represents SQL Create statements.

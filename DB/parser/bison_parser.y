@@ -434,6 +434,10 @@ create_statement:
 			$$->viewColumns = $5;
 			$$->select = $7;
 		}
+	| 	CREATE SCHEMA table_name{
+		$$=new CreateStatement(kCreateSchema);
+		$$->schema =$3.name;
+	}
 	;
 
 opt_not_exists:
