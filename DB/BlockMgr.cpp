@@ -178,8 +178,6 @@ Block * BlockMgr::getLastAvailableBlock(string fileid)
 		allocBlock(fileid);
 
 	Block * curblk =BufferMgr::getInstance()->findBlockById(fileid, Conv64::to_64(curfile->blockNum - 1, 6));
-	curblk->readFromFile();
-	curblk->updateVar();
 	if (!curblk->isFull())
 		return curblk;
 	else

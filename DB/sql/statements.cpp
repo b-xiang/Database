@@ -295,6 +295,7 @@ namespace hsql {
 			auto vec= dict->getDatabases(user);
 			for (auto db : vec) {
 				cout << db->datname << endl;
+				delete db;
 			}
 			delete user;
 			break;

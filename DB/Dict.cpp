@@ -275,11 +275,12 @@ vector<Database*> Dict::getDatabases(User* user)
 				for (it = gg.begin(); it != gg.end(); it++) {
 					targetdatabase->datacl.push_back((*it)->ival);
 				}
-				res.push_back(targetdatabase);
+				res.push_back(new Database(*targetdatabase));
 			}
 		}
 		tempblockid = tempblock->GetNextblockid();
 	} while (tempblockid != "");						//如果下一个块的块号是空的话，表示所有文件都遍历完了
+	delete targetdatabase;
 	return res;
 }
 

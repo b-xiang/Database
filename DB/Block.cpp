@@ -324,7 +324,7 @@ string Block::encodeExprArray(Expr * e)
 	}
 	char dst[BLOCK_SIZE];
 	memset(dst, 0, sizeof(dst));
-	b64_encode(arrbuffer, pos-1, dst);
+	b64_encode(arrbuffer, pos, dst);
 	return string(dst);
 }
 
