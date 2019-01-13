@@ -13,7 +13,7 @@ namespace hsql {
 	struct ImportStatement : SQLStatement {
 		ImportStatement(ImportType type);
 		virtual ~ImportStatement();
-		virtual bool execute(std::string username = "");
+		virtual std::string execute(std::string username = "default");
 
 		ImportType type;
 		char* filePath;

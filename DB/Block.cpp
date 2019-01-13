@@ -298,13 +298,13 @@ string Block::encodeExprArray(Expr * e)
 	arrbuffer[pos++] = '#';
 	for (auto expr : *e->exprList) {
 		if (expr->type == kExprLiteralInt) {
-			string content = Conv64::to_64(e->ival);
+			string content = Conv64::to_64(expr->ival);
 			strcpy(arrbuffer+pos, content.c_str());
 			pos += content.size();
 			pos++;
 		}
 		else if (expr->type == kExprLiteralFloat) {
-			memcpy(arrbuffer+pos, &e->fval, sizeof(double));
+			memcpy(arrbuffer+pos, &expr->fval, sizeof(double));
 			pos += sizeof(double);
 		}
 		else if (expr->type == kExprLiteralString) {
@@ -359,7 +359,7 @@ Expr* Block::decodeExprArray(string str)
 			memset(arrbuff, 0, sizeof(arrbuff));
 			memset(decode, 0, sizeof(decode));
 			strcpy(arrbuff, buff + pos);
-			strcpy(decode, Conv64::to_10(buff).c_str());
+			strcpy(decode, Conv64::to_10(arrbuff).c_str());
 			Expr* e = Expr::makeLiteral((int64_t)atoi(decode));
 			res->push_back(e);
 			pos += len + 1;
@@ -499,7 +499,6 @@ Expr* Block::getIntStrategy::get(Block * blk, int idx)
 
 Expr * Block::getArrayStrategy::get(Block * blk, int idx)
 {
-	vector<Expr*> vec;
 	char buff[BLOCK_SIZE];
 	memset(buff, 0, sizeof(buff));
 	int from = blk->recordpos[idx];

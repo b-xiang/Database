@@ -10,12 +10,10 @@ namespace hsql {
 		kInsertSelect
 	};
 
-	// Represents SQL Insert statements.
-	// Example: "INSERT INTO students VALUES ('Max', 1112233, 'Musterhausen', 2.3)"
 	struct InsertStatement : SQLStatement {
 		InsertStatement(InsertType type);
 		virtual ~InsertStatement();
-		virtual bool execute(std::string username = "");
+		virtual std::string execute(std::string username = "default");
 
 		InsertType type;
 		char* schema;

@@ -18,7 +18,7 @@ namespace hsql {
 
 		ShowStatement(ShowType type);
 		virtual ~ShowStatement();
-		virtual bool execute(std::string username="default");
+		virtual std::string execute(std::string username="default");
 
 		ShowType type;
 		char* schema;

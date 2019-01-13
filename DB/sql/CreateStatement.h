@@ -54,7 +54,7 @@ namespace hsql {
 	struct CreateStatement : SQLStatement {
 		CreateStatement(CreateType type);
 		virtual ~CreateStatement();
-		virtual bool execute(std::string username="default");
+		virtual std::string execute(std::string username="default");
 
 		CreateType type;
 		bool ifNotExists; // default: false

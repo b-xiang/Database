@@ -14,7 +14,7 @@ namespace hsql {
 	struct UpdateStatement : SQLStatement {
 		UpdateStatement();
 		virtual ~UpdateStatement();
-		virtual bool execute(std::string username="default");
+		virtual std::string execute(std::string username="default");
 
 		// TODO: switch to char* instead of TableRef
 		TableRef* table;

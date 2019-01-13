@@ -27,6 +27,7 @@ int main() {
 #ifdef STAND_ALONE
 #include <string>
 #include <iostream>
+#include <sstream>
 #include "SQLParser.h"
 using namespace hsql;
 using namespace std;
@@ -37,6 +38,7 @@ int main() {
 	char buff[1024];
 	string s;
 	while (true) {
+		stringstream ss;
 		SQLParserResult res;
 		cout << ">";
 		cin.getline(buff, 1024);
@@ -48,8 +50,9 @@ int main() {
 			cout << res.errorMsg() << endl;
 		}
 		for (auto stm : res.getStatements()) {
-			stm->execute();
+			ss << stm->execute();
 		}
+		cout << ss.str();
 	}
 	return 0;
 }

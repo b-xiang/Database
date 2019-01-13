@@ -34,7 +34,7 @@ namespace hsql {
 
 		size_t stringLength;  //SQLÓï¾ä³¤¶È
 		std::vector<Expr*>* hints;
-		virtual bool execute(std::string username="default") = 0;//Ö´ÐÐÓï¾ä
+		virtual std::string execute(std::string username="default") = 0;//Ö´ÐÐÓï¾ä
 	private:
 		StatementType type_;
 	};

@@ -10,7 +10,7 @@ namespace hsql {
 	struct PrepareStatement : SQLStatement {
 		PrepareStatement();
 		virtual ~PrepareStatement();
-		virtual bool execute(std::string username = "");
+		virtual std::string execute(std::string username = "default");
 
 		char* name;
 

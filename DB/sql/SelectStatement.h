@@ -42,7 +42,7 @@ namespace hsql {
 	struct SelectStatement : SQLStatement {
 		SelectStatement();
 		virtual ~SelectStatement();
-		virtual bool execute(std::string username = "");
+		virtual std::string execute(std::string username = "default");
 
 		TableRef* fromTable;
 		bool selectDistinct;

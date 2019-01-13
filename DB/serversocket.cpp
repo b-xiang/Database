@@ -3,7 +3,9 @@
 #include "SQLParserResult.h"
 #include "Dict.h"
 #include "Timer.h"
+#include <sstream>
 using namespace hsql;
+using namespace std;
 
 map<int, string> ServerSocket::curUserList;
 int ServerSocket::thread_num = 0;
@@ -158,6 +160,7 @@ void ServerSocket::release()
 
 void ServerSocket::getAndUse(string username)
 {
+	stringstream ss;
 	SQLParserResult res;
 	SQLParser::parse(string(recv_buf), &res);
 	if (!res.isValid()) {
@@ -167,7 +170,7 @@ void ServerSocket::getAndUse(string username)
 		return;
 	}
 	for (auto stm : res.getStatements()) {
-		stm->execute(username);
+		ss << stm->execute(username) << endl;
 	}
-	put_in_buf("服务器处理返回的结果\n");
+	put_in_buf(ss.str().c_str());
 }

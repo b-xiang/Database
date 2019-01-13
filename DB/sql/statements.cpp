@@ -1,5 +1,6 @@
 #include "statements.h"
 #include "../Dict.h"
+#include "../BlockMgr.h"
 #include <iostream>
 using namespace std;
 
@@ -95,13 +96,29 @@ namespace hsql {
 		}
 	}
 
-	bool CreateStatement::execute(string username)
+	string CreateStatement::execute(string username)
 	{
 		Dict* dict = Dict::getInstance();
 		switch (type)
 		{
 		case hsql::kCreateTable: {
-			//Database* db = dict->GetDatabase();
+
+			User* user = dict->GetUser(username);
+			Database* db = dict->GetDatabase(user,schema);
+			if (db == nullptr)
+				cout << "用户"<<user<<"没有表"<<schema << endl;
+			Class* cls=dict->CreateClass();
+			cls->oid = dict->DeliverOid();
+			cls->databaseid = db->GetOid();
+			cls->relname = tableName;
+			BlockMgr*mgr = BlockMgr::getInstance();
+			string fileid=mgr->allocFile();
+			string blockid = mgr->allocBlock(fileid, table);
+			cls->relfileid = fileid;
+			cls->relblockid = blockid;
+			cls->relkind = 'r';
+			dict->StoreClass(cls);
+			
 			break;
 		}
 		case hsql::kCreateTableFromTbl:
@@ -122,7 +139,7 @@ namespace hsql {
 		default:
 			break;
 		}
-		return true;
+		return "";
 	}
 
 	// DeleteStatement
@@ -138,7 +155,7 @@ namespace hsql {
 		delete expr;
 	}
 
-	bool DeleteStatement::execute(string username)
+	string DeleteStatement::execute(string username)
 	{
 		return false;
 	}
@@ -155,7 +172,7 @@ namespace hsql {
 		free(name);
 	}
 
-	bool DropStatement::execute(string username)
+	string DropStatement::execute(string username)
 	{
 		switch (type)
 		{
@@ -172,7 +189,7 @@ namespace hsql {
 		default:
 			break;
 		}
-		return true;
+		return "";
 	}
 
 	// ExecuteStatement
@@ -192,7 +209,7 @@ namespace hsql {
 		}
 	}
 
-	bool ExecuteStatement::execute(string username)
+	string ExecuteStatement::execute(string username)
 	{
 		return false;
 	}
@@ -211,7 +228,7 @@ namespace hsql {
 		free(tableName);
 	}
 
-	bool ImportStatement::execute(string username)
+	string ImportStatement::execute(string username)
 	{
 		switch (type)
 		{
@@ -222,7 +239,7 @@ namespace hsql {
 		default:
 			break;
 		}
-		return true;
+		return "";
 	}
 
 	// InsertStatement
@@ -255,7 +272,7 @@ namespace hsql {
 		}
 	}
 
-	bool InsertStatement::execute(string username)
+	string InsertStatement::execute(string username)
 	{
 		switch (type)
 		{
@@ -266,7 +283,7 @@ namespace hsql {
 		default:
 			break;
 		}
-		return true;
+		return "";
 	}
 
 	// ShowStatament
@@ -281,7 +298,7 @@ namespace hsql {
 		free(name);
 	}
 
-	bool ShowStatement::execute(string username)
+	string ShowStatement::execute(string username)
 	{
 		Dict* dict = Dict::getInstance();
 		switch (type)
@@ -303,7 +320,7 @@ namespace hsql {
 		default:
 			break;
 		}
-		return true;
+		return "";
 	}
 
 	// SelectStatement.h
@@ -373,7 +390,7 @@ namespace hsql {
 		}
 	}
 
-	bool SelectStatement::execute(string username)
+	string SelectStatement::execute(string username)
 	{
 		return false;
 	}
@@ -399,9 +416,9 @@ namespace hsql {
 		}
 	}
 
-	bool UpdateStatement::execute(string username)
+	string UpdateStatement::execute(string username)
 	{
-		return true;
+		return "";
 	}
 
 	// PrepareStatement
@@ -414,7 +431,7 @@ namespace hsql {
 		free(name);
 		free(query);
 	}
-	bool PrepareStatement::execute(string username)
+	string PrepareStatement::execute(string username)
 	{
 		return false;
 	}
