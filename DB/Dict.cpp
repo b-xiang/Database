@@ -121,7 +121,7 @@ void Dict::InitDictionary()
 void Dict::Init()
 {
 	_mkdir("data");
-	int isExist = _access("./data/firstblockid.bid", 0);
+	int isExist = _access("./data/dict_oid.oid", 0);
 	if (isExist == -1) {
 		InitDictionary();
 		User* user = CreateUser();

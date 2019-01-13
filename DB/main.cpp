@@ -33,13 +33,13 @@ using namespace std;
 
 int main() {
 	system("clear.bat");
-	
+
 	char buff[1024];
 	string s;
 	while (true) {
 		SQLParserResult res;
 		cout << ">";
-		cin.getline(buff,1024);
+		cin.getline(buff, 1024);
 		s = string(buff);
 		if (s == "q")
 			break;

@@ -19,8 +19,18 @@ void BufferMgr::release()
 	instance = nullptr;
 }
 
+
 BufferMgr::~BufferMgr()
 {
+	string s = "-1";
+	BufferBlock* m = head;
+	while (m != NULL) {
+		if ((strcmp(m->blk->getFileid(), s.c_str()) != 0) && (strcmp(m->blk->getBlockid(), s.c_str()) != 0)) {
+			m->blk->updateBuffer();
+			m->blk->writeToFile();
+		}
+		m = m->next;
+	}
 }
 void BufferMgr::initialBuffer() {
 	string s = "-1";

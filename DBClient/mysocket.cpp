@@ -36,11 +36,15 @@ void MySocket::run()
 		printf("username:");
 		string data;
 		getline(cin, data);
+		if (data == "exit")
+			return;
 		const char * sendData2;
 		sendData2 = data.c_str(); //stringתconst char*
 		send(sclient, sendData2, strlen(sendData2) + 1, 0);
 		printf("password:");
 		getline(cin, data);
+		if (data == "exit")
+			return;
 		sendData2 = data.c_str(); //stringתconst char*
 		send(sclient, sendData2, strlen(sendData2) + 1, 0);
 

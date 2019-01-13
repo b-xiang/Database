@@ -23,14 +23,20 @@ DWORD __stdcall ServerSocket::createThread(const LPVOID arg)
 		//验证用户身份信息
 		char recvbuf[1000 + 5];
 		recv(sockConn, recvbuf, 1000, 0);
+		recv_buf = recvbuf;
 		if (recv_buf == "exit") 
 			return 0;
 		username = recvbuf;
 		recv(sockConn, recvbuf, 1000, 0);
+		recv_buf = recvbuf;
 		if (recv_buf == "exit")
 			return 0;
-		password = recvbuf;
-		if (true)//用户信息验证//////////////////////////////////////////
+		password = recv_buf;
+		Dict* dict=Dict::getInstance();
+		User* user=dict->GetUser(username);
+		bool pass = user != nullptr&&user->GetUsername() == username && user->GetCode() == password;
+		delete user;
+		if(pass)
 		{
 			curUserList[n] = username;
 			send_buf.clear();

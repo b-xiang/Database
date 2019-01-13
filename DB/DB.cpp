@@ -30,6 +30,7 @@ void DB::release()
 
 void DB::init()
 {
+	Dict::getInstance()->Init();
 	s= new ServerSocket;
 }
 
@@ -44,6 +45,5 @@ void DB::terminate()
 	delete s;
 	BufferMgr::release();
 	IdxMgr::release();
-	Dict::release();
 	Dict::release();
 }
