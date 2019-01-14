@@ -424,7 +424,7 @@ vector<Attribute*>	Dict::GetAttribute(Class* table) {
 
 				targetattribute->name = ((*((*iter)->exprList))[2]->name);
 
-				targetattribute->type = ((*((*iter)->exprList))[3]->type);
+				targetattribute->type = (ExprType)((*((*iter)->exprList))[3]->ival);
 
 				targetattribute->attnum = ((*((*iter)->exprList))[4]->ival);
 

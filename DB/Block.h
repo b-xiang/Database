@@ -49,10 +49,12 @@ private:
 	float pctused;				//当pctused小于PCTUSED_THRESHOLD才能存入
 	string nextblockid;			//该块在该文件的下一个块的blockid
 public:
+	void setNextBlockid(string id) {
+		nextblockid = id;
+	}
 	string GetNextblockid() {
 		return nextblockid;
 	}
-
 	int GetRecordnum() {
 		return recordnum;
 	}

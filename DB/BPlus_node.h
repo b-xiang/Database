@@ -1,6 +1,8 @@
 #ifndef BPLUS_NODE_H
 #define BPLUS_NODE_H
 #include "global.h"
+#include <string>
+using namespace std;
 
 enum NODE_TYPE { INTERNAL, LEAF };        // 结点类型：内结点、叶子结点
 enum SIBLING_DIRECTION { LEFT, RIGHT };   // 兄弟结点方向：左兄弟结点、右兄弟结点
@@ -15,20 +17,20 @@ public:
 	void setType(NODE_TYPE type) { m_Type = type; }
 	int getKeyNum() const { return m_KeyNum; }
 	void setKeyNum(int n) { m_KeyNum = n; }
-	KeyType getKeyValue(int i) const { return m_KeyValues[i]; }
-	void setKeyValue(int i, KeyType key) { m_KeyValues[i] = key; }
-	int getKeyIndex(KeyType key)const;  // 找到键值在结点中存储的下标
+	BPTKeyType getKeyValue(int i) const { return m_KeyValues[i]; }
+	void setKeyValue(int i, BPTKeyType key) { m_KeyValues[i] = key; }
+	int getKeyIndex(BPTKeyType key)const;  // 找到键值在结点中存储的下标
 										// 纯虚函数，定义接口
 	virtual void removeKey(int keyIndex, int childIndex) = 0;  // 从结点中移除键值
 	virtual void split(Node* parentNode, int childIndex) = 0; // 分裂结点
 	virtual void mergeChild(Node* parentNode, Node* childNode, int keyIndex) = 0;  // 合并结点
 	virtual void clear() = 0; // 清空结点，同时会清空结点所包含的子树结点
 	virtual void borrowFrom(Node* destNode, Node* parentNode, int keyIndex, SIBLING_DIRECTION d) = 0; // 从兄弟结点中借一个键值
-	virtual int getChildIndex(KeyType key, int keyIndex)const = 0;  // 根据键值获取孩子结点指针下标
+	virtual int getChildIndex(BPTKeyType key, int keyIndex)const = 0;  // 根据键值获取孩子结点指针下标
 protected:
 	NODE_TYPE m_Type;
 	int m_KeyNum;
-	KeyType m_KeyValues[MAXNUM_KEY];
+	BPTKeyType m_KeyValues[MAXNUM_KEY];
 };
 
 // 内结点
@@ -39,13 +41,13 @@ public:
 
 	Node* getChild(int i) const { return m_Childs[i]; }
 	void setChild(int i, Node* child) { m_Childs[i] = child; }
-	void insert(int keyIndex, int childIndex, KeyType key, Node* childNode);
+	void insert(int keyIndex, int childIndex, BPTKeyType key, Node* childNode);
 	virtual void split(Node* parentNode, int childIndex);
 	virtual void mergeChild(Node* parentNode, Node* childNode, int keyIndex);
 	virtual void removeKey(int keyIndex, int childIndex);
 	virtual void clear();
 	virtual void borrowFrom(Node* destNode, Node* parentNode, int keyIndex, SIBLING_DIRECTION d);
-	virtual int getChildIndex(KeyType key, int keyIndex)const;
+	virtual int getChildIndex(BPTKeyType key, int keyIndex)const;
 private:
 	Node* m_Childs[MAXNUM_CHILD];
 };
@@ -60,18 +62,18 @@ public:
 	void setLeftSibling(LeafNode* node) { m_LeftSibling = node; }
 	LeafNode* getRightSibling() const { return m_RightSibling; }
 	void setRightSibling(LeafNode* node) { m_RightSibling = node; }
-	DataType getData(int i) const { return m_Datas[i]; }
-	void setData(int i, const DataType& data) { m_Datas[i] = data; }
-	void insert(KeyType key, const DataType& data);
+	BPTDataType getData(int i) const { return m_Datas[i]; }
+	void setData(int i, const BPTDataType& data) { m_Datas[i] = data; }
+	void insert(BPTKeyType key, const BPTDataType& data);
 	virtual void split(Node* parentNode, int childIndex);
 	virtual void mergeChild(Node* parentNode, Node* childNode, int keyIndex);
 	virtual void removeKey(int keyIndex, int childIndex);
 	virtual void clear();
 	virtual void borrowFrom(Node* destNode, Node* parentNode, int keyIndex, SIBLING_DIRECTION d);
-	virtual int getChildIndex(KeyType key, int keyIndex)const;
+	virtual int getChildIndex(BPTKeyType key, int keyIndex)const;
 private:
 	LeafNode* m_LeftSibling;
 	LeafNode* m_RightSibling;
-	DataType m_Datas[MAXNUM_LEAF];
+	BPTDataType m_Datas[MAXNUM_LEAF];
 };
 #endif

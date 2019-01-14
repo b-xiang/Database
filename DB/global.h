@@ -1,5 +1,6 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
+#include <string>
 
 //定义数据类型
 typedef signed char int8;
@@ -9,8 +10,8 @@ typedef unsigned short uint16;
 typedef short int16;
 typedef uint uint32;
 typedef int int32;
-typedef long KeyType;
-typedef long DataType;
+typedef double BPTKeyType;
+typedef std::string BPTDataType;
 
 //B+树部分的全局变量
 const int ORDER = 20;						// B+树的阶（非根内结点的最小子树个数）

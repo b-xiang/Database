@@ -2,6 +2,7 @@
 #include "../Dict.h"
 #include "../BlockMgr.h"
 #include "../IdxMgr.h"
+#include "../Block.h"
 #include <iostream>
 #include <sstream>
 using namespace std;
@@ -362,8 +363,80 @@ namespace hsql {
 		switch (type)
 		{
 		case hsql::kInsertValues: {
-			auto user=dict->GetUser(username);
+			User* user = dict->GetUser(username);
+			string _schema;
+			if (schema == nullptr)
+				if (Dict::getCurSchema() != "")
+					_schema = Dict::getCurSchema();
+				else {
+					delete user;
+					return "Error! No database selected\n";
+				}
+			else
+				_schema = schema;
+			Database* db = dict->GetDatabase(user, _schema);
+			Class* cls = dict->GetClass(db, tableName);
+			if (cls == nullptr) {
+				delete user;
+				delete db;
+				delete cls;
+				return "Error: Unknow table " + string(tableName) + "\n";
+			}
+			vector<Attribute*> attrs = dict->GetAttribute(cls);
+			vector<Expr*> exprs;
+			vector<bool> visit;
+			for (auto attr : attrs) {
+				bool found = false;
+				for(int i=0;i<(*columns).size();i++){
+					if (strcmp(attr->name.c_str(),(*columns)[i])==0) {
+						if(attr->type== (*values)[i]->type)
+							exprs.push_back((*values)[i]);
+						else {
+							delete user, db, cls;
+							for (auto attr : attrs) {
+								delete attr;
+							}
+							for (auto expr : exprs) {
+								delete expr;
+							}
+							return "Error: Unexpected data type\n";
+						}
+						found = true;
+					}
+				}
+				visit.push_back(found);
+				if (!found) {
+					if (attr->IsNotNull()) {
+						delete user, db, cls;
+						for (auto attr : attrs) {
+							delete attr;
+						}
+						for (auto expr : exprs) {
+							delete expr;
+						}
+						return "Error: Attribute "+attr->name+" can not be null\n";
+					}
+					else {
+						exprs.push_back(Expr::makeNullLiteral());
+					}
+				}
+			}
+			Expr* final = Expr::makeArray(&exprs);
+			Block* blk=BlockMgr::getInstance()->getLastAvailableBlock(cls->relfileid);
+			blk->put(final);
+			string rid=blk->generateRowID();
+			for (int i = 0; i < attrs.size();i++) {
+				if (visit[i]&&attrs[i]->IsPkey()) {
+					IdxMgr::getInstance();
+				}
+			}
 
+			delete user;
+			delete db;
+			delete cls;
+			for (auto attr : attrs) {
+				delete attr;
+			}
 			break;
 		}
 		case hsql::kInsertSelect:
@@ -518,10 +591,51 @@ namespace hsql {
 
 	string SelectStatement::execute(string username)
 	{
+		vector<Expr*> res;
 		Dict* dict = Dict::getInstance();
-		User*user=dict->GetUser(username);
-		Database*db = dict->GetDatabase(user, fromTable->schema);
+		User* user = dict->GetUser(username);
+		string _schema;
+		if (fromTable->schema == nullptr)
+			if (Dict::getCurSchema() != "")
+				_schema = Dict::getCurSchema();
+			else {
+				delete user;
+				return "Error! No database selected\n";
+			}
+		else
+			_schema = fromTable->schema;
+		Database* db = dict->GetDatabase(user, _schema);
 		Class* cls = dict->GetClass(db, fromTable->name);
+		if (cls == nullptr) {
+			delete user;
+			delete db;
+			delete cls;
+			return "Error: Unknow table " + string(fromTable->name) + "\n";
+		}
+		vector<Attribute*> attrs = dict->GetAttribute(cls);
+		vector<Expr*> exprs;
+		vector<bool> visit;
+		if (selectList->size() == 1 && (*selectList)[0]->type == kExprStar) {
+			for (auto attr : attrs) {
+				if (attr->IsPkey()) {
+					auto rids=IdxMgr::getInstance()->getRowids(attr->oid);
+					auto r = BlockMgr::getInstance()->multipleGet(rids);
+					res.insert(res.begin(),r.begin(),r.end());
+				}
+			}
+		}
+		else {
+
+		}
+
+
+
+		delete user;
+		delete db;
+		delete cls;
+		for (auto attr : attrs) {
+			delete attr;
+		}
 		return "";
 	}
 

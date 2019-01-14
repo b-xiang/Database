@@ -12,7 +12,7 @@ BPlusTree::~BPlusTree() {
 	clear();
 }
 
-bool BPlusTree::insert(KeyType key, const DataType& data) {
+bool BPlusTree::insert(BPTKeyType key, const BPTDataType& data) {
 	// 是否已经存在
 	if (search(key))
 	{
@@ -40,7 +40,7 @@ bool BPlusTree::insert(KeyType key, const DataType& data) {
 	return true;
 }
 
-void BPlusTree::r_insert(Node* parentNode, KeyType key, const DataType& data)
+void BPlusTree::r_insert(Node* parentNode, BPTKeyType key, const BPTDataType& data)
 {
 	if (parentNode -> getType() == LEAF)  // 叶子结点,直接插入
 	{
@@ -75,14 +75,14 @@ void BPlusTree::clear()
 	}
 }
 
-bool BPlusTree::search(KeyType key)
+bool BPlusTree::search(BPTKeyType key)
 {
 	return r_search(pRoot, key);
 }
 
-vector<DataType> BPlusTree::getAllValues()
+vector<BPTDataType> BPlusTree::getAllValues()
 {
-	vector<DataType> res;
+	vector<BPTDataType> res;
 	LeafNode* itr = pDataHead;
 	while (itr != NULL)
 	{
@@ -95,9 +95,9 @@ vector<DataType> BPlusTree::getAllValues()
 	return res;
 }
 
-vector<pair<KeyType, DataType>> BPlusTree::getAllKVPairs()
+vector<pair<BPTKeyType, BPTDataType>> BPlusTree::getAllKVPairs()
 {
-	vector<pair<KeyType,DataType> > res;
+	vector<pair<BPTKeyType,BPTDataType> > res;
 	LeafNode* itr = pDataHead;
 	while (itr != NULL)
 	{
@@ -110,7 +110,7 @@ vector<pair<KeyType, DataType>> BPlusTree::getAllKVPairs()
 	return res;
 }
 
-bool BPlusTree::r_search(Node *pNode, KeyType key)const
+bool BPlusTree::r_search(Node *pNode, BPTKeyType key)const
 {
 	if (pNode == NULL)  //检测节点指针是否为空,或该节点是否为叶子节点
 	{
@@ -180,7 +180,7 @@ void BPlusTree::printData()const
 	}
 }
 
-bool BPlusTree::remove(KeyType key)
+bool BPlusTree::remove(BPTKeyType key)
 {
 	if (!search(key))  //不存在
 	{
@@ -210,7 +210,7 @@ bool BPlusTree::remove(KeyType key)
 }
 
 // parentNode中包含的键值数>MINNUM_KEY
-void BPlusTree::r_remove(Node* parentNode, KeyType key)
+void BPlusTree::r_remove(Node* parentNode, BPTKeyType key)
 {
 	int keyIndex = parentNode -> getKeyIndex(key);
 	int childIndex = parentNode -> getChildIndex(key, keyIndex); // 孩子结点指针索引
@@ -258,7 +258,7 @@ void BPlusTree::r_remove(Node* parentNode, KeyType key)
 	}
 }
 
-void BPlusTree::changeKey(Node *pNode, KeyType oldKey, KeyType newKey)
+void BPlusTree::changeKey(Node *pNode, BPTKeyType oldKey, BPTKeyType newKey)
 {
 	if (pNode != NULL && pNode -> getType() != LEAF)
 	{
@@ -274,7 +274,7 @@ void BPlusTree::changeKey(Node *pNode, KeyType oldKey, KeyType newKey)
 	}
 }
 
-bool BPlusTree::update(KeyType oldKey, KeyType newKey)
+bool BPlusTree::update(BPTKeyType oldKey, BPTKeyType newKey)
 {
 	if (search(newKey)) // 检查更新后的键是否已经存在
 	{
@@ -282,20 +282,20 @@ bool BPlusTree::update(KeyType oldKey, KeyType newKey)
 	}
 	else
 	{
-		DataType dataValue;
+		BPTDataType dataValue;
 		remove(oldKey, dataValue);
-		if (dataValue == INVALID_INDEX)
+		/*if (dataValue == INVALID_INDEX)
 		{
 			return false;
 		}
 		else
-		{
+		{*/
 			return insert(newKey, dataValue);
-		}
+		//}
 	}
 }
 
-void BPlusTree::remove(KeyType key, DataType& dataValue)
+void BPlusTree::remove(BPTKeyType key, BPTDataType& dataValue)
 {
 	if (!search(key))  //不存在
 	{
@@ -325,7 +325,7 @@ void BPlusTree::remove(KeyType key, DataType& dataValue)
 	r_remove(pRoot, key, dataValue);
 }
 
-void BPlusTree::r_remove(Node* parentNode, KeyType key, DataType& dataValue)
+void BPlusTree::r_remove(Node* parentNode, BPTKeyType key, BPTDataType& dataValue)
 {
 	int keyIndex = parentNode -> getKeyIndex(key);
 	int childIndex = parentNode -> getChildIndex(key, keyIndex); // 孩子结点指针索引
@@ -374,9 +374,9 @@ void BPlusTree::r_remove(Node* parentNode, KeyType key, DataType& dataValue)
 	}
 }
 
-vector< DataType> BPlusTree::select(KeyType compareKey, int compareOpeartor)
+vector< BPTDataType> BPlusTree::select(BPTKeyType compareKey, int compareOpeartor)
 {
-	vector< DataType> results;
+	vector< BPTDataType> results;
 	if (pRoot != NULL)
 	{
 		if (compareKey> MaxKey)   // 比较键值大于B+树中最大的键值
@@ -474,13 +474,13 @@ vector< DataType> BPlusTree::select(KeyType compareKey, int compareOpeartor)
 			}
 		}
 	}
-	sort< vector< DataType> ::iterator> (results.begin(), results.end());
+	sort< vector< BPTDataType> ::iterator> (results.begin(), results.end());
 	return results;
 }
 
-vector< DataType> BPlusTree::select(KeyType smallKey, KeyType largeKey)
+vector< BPTDataType> BPlusTree::select(BPTKeyType smallKey, BPTKeyType largeKey)
 {
-	vector< DataType> results;
+	vector< BPTDataType> results;
 	if (smallKey <= largeKey)
 	{
 		SelectResult start, end;
@@ -510,16 +510,16 @@ vector< DataType> BPlusTree::select(KeyType smallKey, KeyType largeKey)
 			results.push_back(itr -> getData(i));
 		}
 	}
-	sort< vector< DataType> ::iterator> (results.begin(), results.end());
+	sort< vector< BPTDataType> ::iterator> (results.begin(), results.end());
 	return results;
 }
 
-void BPlusTree::search(KeyType key, SelectResult& result)
+void BPlusTree::search(BPTKeyType key, SelectResult& result)
 {
 	r_search(pRoot, key, result);
 }
 
-void BPlusTree::r_search(Node* pNode, KeyType key, SelectResult& result)
+void BPlusTree::r_search(Node* pNode, BPTKeyType key, SelectResult& result)
 {
 	int keyIndex = pNode -> getKeyIndex(key);
 	int childIndex = pNode -> getChildIndex(key, keyIndex); // 孩子结点指针索引

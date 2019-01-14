@@ -10,7 +10,7 @@ Node::~Node() {
 	setKeyNum(0);
 }
 
-int Node::getKeyIndex(KeyType key)const
+int Node::getKeyIndex(BPTKeyType key)const
 {
 	int left = 0;
 	int right = getKeyNum() - 1;
@@ -18,7 +18,7 @@ int Node::getKeyIndex(KeyType key)const
 	while (left != right)
 	{
 		current = (left + right) / 2;
-		KeyType currentKey = getKeyValue(current);
+		BPTKeyType currentKey = getKeyValue(current);
 		if (key>currentKey)
 		{
 			left = current + 1;
@@ -31,7 +31,7 @@ int Node::getKeyIndex(KeyType key)const
 	return left;
 }
 /*
-int Node::getKeyIndex(KeyType key) const
+int Node::getKeyIndex(BPTKeyType key) const
 {
 	int low = 0;
 	int mid = 0;
@@ -40,7 +40,7 @@ int Node::getKeyIndex(KeyType key) const
 	while (low < high)
 	{
 		mid = (low + high) >> 1; // 中点值
-		KeyType midKey = getKeyValue(mid);
+		BPTKeyType midKey = getKeyValue(mid);
 		if (key > midKey)
 		{
 			low = mid + 1;
@@ -103,7 +103,7 @@ void InternalNode::split(Node* parentNode, int childIndex)
 	((InternalNode*)parentNode)->insert(childIndex, childIndex + 1, m_KeyValues[MINNUM_KEY], newNode);
 }
 
-void InternalNode::insert(int keyIndex, int childIndex, KeyType key, Node* childNode) {
+void InternalNode::insert(int keyIndex, int childIndex, BPTKeyType key, Node* childNode) {
 	int i;
 	for (i = getKeyNum(); i>keyIndex; --i)//将父节点中的childIndex后的所有关键字的值和子树指针向后移一位
 	{
@@ -166,7 +166,7 @@ void InternalNode::borrowFrom(Node* siblingNode, Node* parentNode, int keyIndex,
 	}
 }
 
-int InternalNode::getChildIndex(KeyType key, int keyIndex)const
+int InternalNode::getChildIndex(BPTKeyType key, int keyIndex)const
 {
 	if (key == getKeyValue(keyIndex))
 	{
@@ -199,7 +199,7 @@ void LeafNode::clear()
 	}
 }
 
-void LeafNode::insert(KeyType key, const DataType& data)
+void LeafNode::insert(BPTKeyType key, const BPTDataType& data)
 {
 	int i;
 	for (i = m_KeyNum; i >= 1 && m_KeyValues[i - 1]>key; --i)
@@ -277,7 +277,7 @@ void LeafNode::borrowFrom(Node* siblingNode, Node* parentNode, int keyIndex, SIB
 	}
 }
 
-int LeafNode::getChildIndex(KeyType key, int keyIndex)const
+int LeafNode::getChildIndex(BPTKeyType key, int keyIndex)const
 {
 	return keyIndex;
 }

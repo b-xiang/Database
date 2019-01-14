@@ -177,11 +177,13 @@ Block * BlockMgr::getLastAvailableBlock(string fileid)
 	if (curfile->blockNum == 0)
 		allocBlock(fileid);
 
-	Block * curblk =BufferMgr::getInstance()->findBlockById(fileid, Conv64::to_64(curfile->blockNum - 1, 6));
-	if (!curblk->isFull())
-		return curblk;
-	else
-		return nullptr;
+	Block * curblk = BufferMgr::getInstance()->findBlockById(fileid, Conv64::to_64(curfile->blockNum - 1, 6));
+	if (curblk->isFull()) {
+		string blockid = allocBlock(fileid, curblk->getBlockType());
+		curblk->setNextBlockid(blockid);
+		curblk = BufferMgr::getInstance()->findBlockById(fileid, blockid);
+	}
+	return curblk;
 }
 
 void BlockMgr::releaseBlk(Block * blk)
