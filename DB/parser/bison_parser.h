@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.1.  */
+/* A Bison parser, made by GNU Bison 3.0.4.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015, 2018 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -30,8 +30,8 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-#ifndef YY_HSQL_BISON_PARSER_H_INCLUDED
-# define YY_HSQL_BISON_PARSER_H_INCLUDED
+#ifndef YY_HSQL_BISON_PARSER_TAB_H_INCLUDED
+# define YY_HSQL_BISON_PARSER_TAB_H_INCLUDED
 /* Debug traces.  */
 #ifndef HSQL_DEBUG
 # if defined YYDEBUG
@@ -48,7 +48,7 @@
 extern int hsql_debug;
 #endif
 /* "%code requires" blocks.  */
-#line 35 "bison_parser.y" /* yacc.c:1919  */
+#line 35 "bison_parser.y" /* yacc.c:1909  */
 
 // %code requires block
 
@@ -72,7 +72,7 @@ extern int hsql_debug;
 				} \
 		}
 
-#line 76 "bison_parser.h" /* yacc.c:1919  */
+#line 76 "bison_parser.tab.h" /* yacc.c:1909  */
 
 /* Token type.  */
 #ifndef HSQL_TOKENTYPE
@@ -214,14 +214,16 @@ extern int hsql_debug;
     SQL_YEAR = 390,
     SQL_TRUE = 391,
     SQL_FALSE = 392,
-    SQL_EQUALS = 393,
-    SQL_NOTEQUALS = 394,
-    SQL_LESS = 395,
-    SQL_GREATER = 396,
-    SQL_LESSEQ = 397,
-    SQL_GREATEREQ = 398,
-    SQL_NOTNULL = 399,
-    SQL_UMINUS = 400
+    SQL_DATABASES = 393,
+    SQL_USE = 394,
+    SQL_EQUALS = 395,
+    SQL_NOTEQUALS = 396,
+    SQL_LESS = 397,
+    SQL_GREATER = 398,
+    SQL_LESSEQ = 399,
+    SQL_GREATEREQ = 400,
+    SQL_NOTNULL = 401,
+    SQL_UMINUS = 402
   };
 #endif
 
@@ -230,7 +232,7 @@ extern int hsql_debug;
 
 union HSQL_STYPE
 {
-#line 95 "bison_parser.y" /* yacc.c:1919  */
+#line 95 "bison_parser.y" /* yacc.c:1909  */
 
 	double fval;
 	int64_t ival;
@@ -249,6 +251,7 @@ union HSQL_STYPE
 	hsql::PrepareStatement* prep_stmt;
 	hsql::ExecuteStatement* exec_stmt;
 	hsql::ShowStatement*    show_stmt;
+	hsql::UseStatement* use_stmt;
 
 	hsql::TableName table_name;
 	hsql::TableRef* table;
@@ -272,7 +275,7 @@ union HSQL_STYPE
 	std::vector<hsql::Expr*>* expr_vec;
 	std::vector<hsql::OrderDescription*>* order_vec;
 
-#line 276 "bison_parser.h" /* yacc.c:1919  */
+#line 279 "bison_parser.tab.h" /* yacc.c:1909  */
 };
 
 typedef union HSQL_STYPE HSQL_STYPE;
@@ -298,4 +301,4 @@ struct HSQL_LTYPE
 
 int hsql_parse (hsql::SQLParserResult* result, yyscan_t scanner);
 
-#endif /* !YY_HSQL_BISON_PARSER_H_INCLUDED  */
+#endif /* !YY_HSQL_BISON_PARSER_TAB_H_INCLUDED  */

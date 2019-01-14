@@ -152,6 +152,7 @@
     <ClInclude Include="sql\statements.h" />
     <ClInclude Include="sql\Table.h" />
     <ClInclude Include="sql\UpdateStatement.h" />
+    <ClInclude Include="sql\UseStatement.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="util\sqlhelper.h" />
   </ItemGroup>

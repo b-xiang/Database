@@ -10,6 +10,7 @@
 using namespace std;
 
 Dict* Dict::instance = nullptr;
+string Dict::curSchema;
 
 Dict * Dict::getInstance()
 {
@@ -335,6 +336,58 @@ Class*	Dict::GetClass(Database* tdatabase, string relationname) {
 
 }
 
+vector<Class*> Dict::getClasses(Database * tdatabase)
+{
+	vector<Class*> res;
+	Class* targetclass = CreateClass();			//创建一个空的Class用于装结果
+
+	int databaseid = tdatabase->GetOid();
+
+	int temp_databaseid;
+	string temp_relationname;
+	string tempblockid = classblock1;			//遍历文件用的块
+
+	//遍历所有块，同时在文件中找到对应项目，并且判断databaseid和relationname是否相等
+	do {
+		Block* tempblock = BlockMgr::getInstance()->getBlock(targetclass->fileid, tempblockid);
+		vector<Expr*> tempexpr = tempblock->get(0, tempblock->GetRecordnum() - 1);
+		vector<Expr*>::iterator iter;
+		for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
+			temp_databaseid = (*((*iter)->exprList))[1]->ival;
+
+			temp_relationname = (*((*iter)->exprList))[2]->name;
+
+			if (temp_databaseid == databaseid) {		//找到
+
+				targetclass->oid = ((*((*iter)->exprList))[0]->ival);
+
+				targetclass->databaseid = ((*((*iter)->exprList))[1]->ival);
+
+				targetclass->relname = ((*((*iter)->exprList))[2]->name);
+
+				targetclass->relfileid = ((*((*iter)->exprList))[3]->name);
+
+				targetclass->relblockid = ((*((*iter)->exprList))[4]->name);
+
+				targetclass->reltuples = ((*((*iter)->exprList))[5]->ival);
+
+				targetclass->hasindex = ((*((*iter)->exprList))[6]->ival);
+
+				targetclass->relkind = *((*((*iter)->exprList))[7]->name);
+
+				targetclass->relnatts = ((*((*iter)->exprList))[8]->ival);
+
+				targetclass->haspkey = ((*((*iter)->exprList))[9]->ival);
+				res.push_back(targetclass);
+			}
+		}
+		tempblockid = tempblock->GetNextblockid();
+	} while (tempblockid != "");						//如果下一个块的块号是空的话，表示所有文件都遍历完了
+
+	return res;
+
+}
+
 
 vector<Attribute*>	Dict::GetAttribute(Class* table) {
 	vector<Attribute*> allarrtibute;			//定义返回值
@@ -531,6 +584,7 @@ void Dict::StoreAttribute(Attribute* tattribute) {
 void Dict::StoreIndex(Index* tindex) {
 	tindex->StoreToFile();
 }
+
 
 /*-------------------------------------------------*/
 Oid* Oid::instance = nullptr;
@@ -941,7 +995,7 @@ void Attribute::StoreToFile() {
 	Expr* expr_oid = Expr::makeLiteral((int64_t)oid);
 	Expr* expr_relid = Expr::makeLiteral((int64_t)relid);
 	Expr* expr_name = Expr::makeLiteral(name.data());
-	Expr* expr_type = Expr::make(type);
+	Expr* expr_type = Expr::makeLiteral((int64_t)type);
 	Expr* expr_attnum = Expr::makeLiteral((int64_t)attnum);
 	Expr* expr_varcharlen = Expr::makeLiteral((int64_t)varcharlen);
 	Expr* expr_notnull = Expr::makeLiteral((int64_t)notnull);

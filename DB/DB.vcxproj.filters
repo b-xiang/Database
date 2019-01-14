@@ -141,6 +141,9 @@
     <ClInclude Include="Dict.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="sql\UseStatement.h">
+      <Filter>头文件\sql</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DB.cpp">

@@ -46,7 +46,8 @@ namespace hsql {
 		kCreateTable,
 		kCreateTableFromTbl, // Hyrise file format
 		kCreateView,
-		kCreateSchema
+		kCreateSchema,
+		kCreateIndex
 	};
 
 	// Represents SQL Create statements.
@@ -61,6 +62,7 @@ namespace hsql {
 		char* filePath;   // default: nullptr
 		char* schema;     // default: nullptr
 		char* tableName;  // default: nullptr
+		char* onWhich;
 		std::vector<ColumnDefinition*>* columns; // default: nullptr
 		std::vector<char*>* viewColumns;
 		SelectStatement* select;

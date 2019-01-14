@@ -304,6 +304,8 @@ private:
 	Dict() {}
 	Dict(const Dict&) = delete;
 	Dict& operator=(const Dict&) = delete;
+private:
+	static string curSchema;
 public:
 
 	void InitDictionary();					//创建所有数据字典表文件，整个程序只可以调用一次，该函数创建五个数据字典文件，
@@ -323,8 +325,9 @@ public:
 
 	User*	GetUser(string username);		//从用户表中，根据username找到user对象
 	Database*	GetDatabase(User* user, string dbname);	//从数据库表中，根据数据库名字and数据库所有者找到数据库
-	vector<Database*> getDatabases(User* user);
+	vector<Database*> getDatabases(User* user);			//从数据库中找到所有的数据库
 	Class*	GetClass(Database* tdatabase, string relationname);	//从class表中，根据数据库和relation的名字找到表、索引
+	vector<Class*> getClasses(Database* tdatabase);			//从一个数据库中找到所有的表
 	vector<Attribute*>	GetAttribute(Class* table);		//从attribute表中，根据表的oid，找到该表所有属性
 	Attribute*	GetAttribute(int attritubeid);			//从attribute表中，根据属性oid找到属性
 	vector<Attribute*>	GetAttribute(Index* index);		//从attribute表中，根据索引，找到该索引所有属性
@@ -337,5 +340,8 @@ public:
 	void StoreAttribute(Attribute* tattribute);		//将attribute存入attribute表中
 	void StoreIndex(Index* tindex);			//将index存入index表中
 
+
+	static void setCurSchema(string schema) { curSchema = schema; }
+	static string getCurSchema() { return curSchema; }
 };
 #endif // !DICT_H

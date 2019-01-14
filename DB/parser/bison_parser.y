@@ -110,6 +110,7 @@ int yyerror(YYLTYPE* llocp, SQLParserResult* result, yyscan_t scanner, const cha
 	hsql::PrepareStatement* prep_stmt;
 	hsql::ExecuteStatement* exec_stmt;
 	hsql::ShowStatement*    show_stmt;
+	hsql::UseStatement* use_stmt;
 
 	hsql::TableName table_name;
 	hsql::TableRef* table;
@@ -175,7 +176,7 @@ int yyerror(YYLTYPE* llocp, SQLParserResult* result, yyscan_t scanner, const cha
 %token VIEW WHEN WITH ADD ALL AND ASC CSV END FOR INT KEY
 %token NOT OFF SET TBL TOP AS BY IF IN IS OF ON OR TO
 %token ARRAY CONCAT ILIKE SECOND MINUTE HOUR DAY MONTH YEAR
-%token TRUE FALSE DATABASES
+%token TRUE FALSE DATABASES USE
 
 /*********************************
  ** Non-Terminal types (http://www.gnu.org/software/bison/manual/html_node/Type-Decl.html)
@@ -192,6 +193,7 @@ int yyerror(YYLTYPE* llocp, SQLParserResult* result, yyscan_t scanner, const cha
 %type <update_stmt>     update_statement
 %type <drop_stmt>	    drop_statement
 %type <show_stmt>	    show_statement
+%type <use_stmt>		use_statement
 %type <table_name>      table_name
 %type <sval> 		    file_path prepare_target_query
 %type <bval> 		    opt_not_exists opt_exists opt_distinct opt_column_nullable
@@ -298,6 +300,9 @@ statement:
 	|	show_statement {
 			$$ = $1;
 		}
+	| use_statement{
+			$$ = $1;
+	}
 	;
 
 
@@ -408,6 +413,16 @@ show_statement:
 	}
 	;
 
+/******************************
+ * Use Statement
+ * use db;
+ ******************************/
+
+ use_statement:
+		USE table_name{
+			$$=new UseStatement();
+			$$->schema=$2.name;
+		}
 
 /******************************
  * Create Statement
@@ -438,9 +453,15 @@ create_statement:
 			$$->select = $7;
 		}
 	| 	CREATE SCHEMA table_name{
-		$$=new CreateStatement(kCreateSchema);
-		$$->schema =$3.name;
-	}
+			$$=new CreateStatement(kCreateSchema);
+			$$->schema =$3.name;
+		}
+	|	CREATE INDEX ON table_name '(' table_name ')'{
+			$$=new CreateStatement(kCreateIndex);
+			$$->schema = $4.schema;
+			$$->tableName = $4.name;
+			$$->onWhich =$6.name;
+		}
 	;
 
 opt_not_exists:

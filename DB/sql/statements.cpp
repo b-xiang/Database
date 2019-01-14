@@ -1,7 +1,9 @@
 #include "statements.h"
 #include "../Dict.h"
 #include "../BlockMgr.h"
+#include "../IdxMgr.h"
 #include <iostream>
+#include <sstream>
 using namespace std;
 
 namespace hsql {
@@ -72,6 +74,7 @@ namespace hsql {
 		schema(nullptr),
 		tableName(nullptr),
 		columns(nullptr),
+		onWhich(nullptr),
 		viewColumns(nullptr),
 		select(nullptr) {};
 
@@ -102,11 +105,12 @@ namespace hsql {
 		switch (type)
 		{
 		case hsql::kCreateTable: {
-
 			User* user = dict->GetUser(username);
 			Database* db = dict->GetDatabase(user,schema);
-			if (db == nullptr)
-				cout << "用户"<<user<<"没有表"<<schema << endl;
+			if (db == nullptr) {
+				delete user;
+				return "Error: Unknow database "+string(schema)+"\n";
+			}	
 			Class* cls=dict->CreateClass();
 			cls->oid = dict->DeliverOid();
 			cls->databaseid = db->GetOid();
@@ -117,8 +121,34 @@ namespace hsql {
 			cls->relfileid = fileid;
 			cls->relblockid = blockid;
 			cls->relkind = 'r';
+			cls->relnatts = columns->size();
 			dict->StoreClass(cls);
-			
+			for (int i = 0; i < columns->size(); i++) {
+				Attribute* attr = dict->CreateAttribute();
+				attr->oid = dict->DeliverOid();
+				attr->attnum = i;
+				attr->name = (*columns)[i]->name;
+				attr->relid = cls->oid;
+				attr->notnull = (*columns)[i]->nullable;
+				if ((*columns)[i]->type.data_type == DataType::INT|| (*columns)[i]->type.data_type == DataType::LONG) {
+					attr->type = kExprLiteralInt;
+				}
+				else if ((*columns)[i]->type.data_type == DataType::FLOAT || (*columns)[i]->type.data_type == DataType::DOUBLE) {
+					attr->type = kExprLiteralFloat;
+				}
+				else if ((*columns)[i]->type.data_type == DataType::VARCHAR || (*columns)[i]->type.data_type == DataType::CHAR) {
+					attr->type = kExprLiteralString;
+					attr->varcharlen = (*columns)[i]->type.length;
+				}
+				else if ((*columns)[i]->type.data_type == DataType::TEXT) {
+					attr->type = kExprLiteralString;
+				}
+				dict->StoreAttribute(attr);
+				delete attr;
+			}
+			delete user;
+			delete db;
+			delete cls;
 			break;
 		}
 		case hsql::kCreateTableFromTbl:
@@ -126,14 +156,68 @@ namespace hsql {
 		case hsql::kCreateView:
 			break;
 		case hsql::kCreateSchema: {
-			Database* db=dict->CreateDatabase();
 			User* user = dict->GetUser(username);
+			Database* db = dict->GetDatabase(user, schema);
+			if (db != nullptr)
+			{
+				delete user;
+				delete db;
+				return "Error! Can not create database " + string(schema) + " :Databased existed.\n";
+			}
+			db=dict->CreateDatabase();
 			db->SetOwnerid(user->GetUserid());
 			db->SetDatName(schema);
 			db->SetOid(dict->DeliverOid());
 			dict->StoreDatabase(db);
 			delete user;
 			delete db;
+			break;
+		}
+		case hsql::kCreateIndex: {
+			User* user = dict->GetUser(username);
+			string _schema;
+			if (schema == nullptr)
+				if (Dict::getCurSchema() != "")
+					_schema = Dict::getCurSchema();
+				else {
+					delete user;
+					return "Error! No database selected\n";
+				}
+			else
+				_schema = schema;
+			Database* db = dict->GetDatabase(user, _schema);
+			Class* cls = dict->GetClass(db, tableName);
+			if (cls == nullptr) {
+				delete user;
+				delete db;
+				delete cls;
+				return "Error: Unknow table " + string(tableName) + "\n";
+			}
+			vector<Attribute*> attrs = dict->GetAttribute(cls);
+			for (auto attr : attrs) {
+				if (attr->name == onWhich) {
+					if (attr->IsPkey()) {
+						delete user;
+						delete db;
+						delete cls;
+						for (auto attr : attrs) {
+							delete attr;
+						}
+						return "Error: Index on " + string(onWhich) + " has been set up";
+					}
+					else {
+						attr->SetPkey(true);
+						IdxMgr* mgr=IdxMgr::getInstance();
+						mgr->createIdx(attr->oid);
+					}
+				}
+			}
+			delete user;
+			delete db;
+			delete cls;
+			for (auto attr : attrs) {
+				delete attr;
+			}
 			break;
 		}
 		default:
@@ -274,10 +358,14 @@ namespace hsql {
 
 	string InsertStatement::execute(string username)
 	{
+		Dict* dict = Dict::getInstance();
 		switch (type)
 		{
-		case hsql::kInsertValues:
+		case hsql::kInsertValues: {
+			auto user=dict->GetUser(username);
+
 			break;
+		}
 		case hsql::kInsertSelect:
 			break;
 		default:
@@ -301,26 +389,64 @@ namespace hsql {
 	string ShowStatement::execute(string username)
 	{
 		Dict* dict = Dict::getInstance();
+		stringstream ss;
 		switch (type)
 		{
-		case hsql::kShowColumns:
+		case hsql::kShowColumns: {
+			if (Dict::getCurSchema() == "") {
+				return "Error: No database selected\n";
+			}
+			auto user = dict->GetUser(username);
+			auto db = dict->GetDatabase(user, Dict::getCurSchema());
+			auto cls = dict->GetClass(db, name);
+			if (cls == nullptr) {
+				delete user;
+				delete db;
+				return "Error: Unknown table " + string(name) + "\n";
+			}
+			auto attrs = dict->GetAttribute(cls);
+			for (auto attr : attrs) {
+				ss << attr->name << endl;
+			}
+			delete user;
+			delete db;
+			delete cls;
+			for (auto attr : attrs) {
+				delete attr;
+			}
 			break;
-		case hsql::kShowTables:
+		}
+		case hsql::kShowTables: {
+			if (Dict::getCurSchema() == "") {
+				return "Error: No database selected\n";
+			}
+			auto user = dict->GetUser(username);
+			auto db = dict->GetDatabase(user, Dict::getCurSchema());
+			auto clses = dict->getClasses(db);
+			for (auto cls : clses) {
+				ss << cls->relname << endl;
+			}
+			for (auto cls : clses) {
+				delete cls;
+			}
 			break;
+		}
 		case hsql::kShowSchemas: {
 			User* user=dict->GetUser(username);
 			auto vec= dict->getDatabases(user);
 			for (auto db : vec) {
-				cout << db->datname << endl;
-				delete db;
+				ss<<db->datname << endl;
 			}
 			delete user;
+			for (auto v : vec) {
+				delete v;
+			}
 			break;
 		}
 		default:
 			break;
 		}
-		return "";
+		return ss.str();
 	}
 
 	// SelectStatement.h
@@ -392,7 +518,11 @@ namespace hsql {
 
 	string SelectStatement::execute(string username)
 	{
-		return false;
+		Dict* dict = Dict::getInstance();
+		User*user=dict->GetUser(username);
+		Database*db = dict->GetDatabase(user, fromTable->schema);
+		Class* cls = dict->GetClass(db, fromTable->name);
+		return "";
 	}
 
 	// UpdateStatement
@@ -498,5 +628,27 @@ namespace hsql {
 		delete right;
 		delete condition;
 	}
+
+	hsql::UseStatement::UseStatement():
+		SQLStatement(kStmtUse)
+	{
+	}
+	string hsql::UseStatement::execute(string username)
+	{
+		auto dict=Dict::getInstance();
+		auto user = dict->GetUser(username);
+		auto db = dict->GetDatabase(user, schema);
+		if (db != nullptr) {
+			Dict::setCurSchema(schema);
+			delete user;
+			delete db;
+			return "Database changed\n";
+		}
+		else {
+			delete user;
+			return "Unknow database '" +string( schema) + "'";
+		}
+	}
+
 
 } // namespace hsql

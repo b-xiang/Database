@@ -18,46 +18,24 @@ void IdxMgr::release()
 
 IdxMgr::~IdxMgr()
 {
-	for (auto tbl : tbls) {
-		for (auto col : tbl->cols) {
-			delete col->root;
-			delete col;
-		}
-		delete tbl;
+	for (auto i : idx) {
+		delete i.second;
 	}
 }
 
-bool IdxMgr::hasIdx(Expr * columnRef)
+bool IdxMgr::hasIdx(int attrOid)
 {
-	for (auto tbl : tbls) 
-		if (tbl->tableRef == columnRef->table) 
-			for (auto col : tbl->cols) 
-				if (col->colRef == columnRef->name)
-					return true;
-	return false;
+	return idx[attrOid] != nullptr;
 }
 
-void IdxMgr::createIdx(Expr * columnRef)
+void IdxMgr::createIdx(int attrOid)
 {
-	if (hasIdx(columnRef))
+	if (hasIdx(attrOid))
 		return;
-	for (auto tbl : tbls)
-		if (tbl->tableRef == columnRef->table) {
-			tbl->cols.push_back(new col_idx(columnRef->name, new BPlusTree));
-			return;
-		}
-	tbl_idx* idx=new tbl_idx(columnRef->table);
-	idx->cols.push_back(new col_idx(columnRef->name, new BPlusTree));
-	tbls.push_back(idx);
+	idx[attrOid] = new BPlusTree;
 }
 
-BPlusTree * IdxMgr::getBPT(Expr * columnRef)
+BPlusTree * IdxMgr::getBPT(int attrOid)
 {
-	if(!hasIdx(columnRef))
-		return nullptr;
-	for (auto tbl : tbls)
-		if (tbl->tableRef == columnRef->table)
-			for (auto col : tbl->cols)
-				if (col->colRef == columnRef->name)
-					return col->root;
+	return idx[attrOid];
 }
