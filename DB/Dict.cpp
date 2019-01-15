@@ -586,6 +586,7 @@ void Dict::StoreIndex(Index* tindex) {
 }
 
 
+
 /*-------------------------------------------------*/
 Oid* Oid::instance = nullptr;
 
@@ -689,6 +690,7 @@ void User::StoreToFile() {
 	//fout.close();
 	//fout.clear();
 }
+
 
 /*-------------------------------------------------*/
 

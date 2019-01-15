@@ -24,7 +24,10 @@ namespace hsql {
 		kExprHint,
 		kExprArray,
 		kExprArrayIndex,
-		kExprDatetimeField
+		kExprDatetimeField,
+
+		kExprDeleted,
+		kExprUpdated
 	};
 
 	// Operator types.

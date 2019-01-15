@@ -17,7 +17,8 @@ private:
 	块的结构：
 	[	
 		oooooofffbbbbbb\0
-		recordnum(16位int)
+		recordnum(base64型int)
+		nextblockid(base64型int)
 		recordpos(长度为recordnum的16位int数组)
 		dataType(长度为recordnum的8位uint数组)
 		bodyBegin(指向记录体开始的指针)
@@ -47,19 +48,18 @@ private:
 	char blockid[7];			//6位base64，块在文件内编号
 	float pctfree;				//当pctfree大于PCTFREE_THRESHOLD才能存入
 	float pctused;				//当pctused小于PCTUSED_THRESHOLD才能存入
-	string nextblockid;			//该块在该文件的下一个块的blockid
+	int nextblockid;			//该块在该文件的下一个块的blockid
 public:
-	void setNextBlockid(string id) {
-		nextblockid = id;
-	}
-	string GetNextblockid() {
-		return nextblockid;
-	}
+	void setNextBlockid(string id);
+	string GetNextblockid();
 	int GetRecordnum() {
 		return recordnum;
 	}
-	bool isAbleToInput(Expr* content);	//检测一个Expr是否能被放进块中
-	bool put(Expr* content);			//向块中放入数据，Expr参见sql/Expr.h
+	bool isAbleToInput(Expr* content);		//检测一个Expr是否能被放进块中
+	bool isAbleToUpdate(Expr* content);	//检测一个被更新的Expr是否能被放进块中
+	bool put(Expr* content,int beginPos=-1);			//向块中放入数据，Expr参见sql/Expr.h
+	void remove(const char* rowid);	//删除块中元素
+	string update(const char* rowid, Expr* newContent);//更新元素
 	Expr* get(const char* rowid);		//按照块内行标号从块内提取数据，生成Expr
 	vector<Expr*> get(int fromidx, int toidx);
 	vector<Expr*> get(const char* fromrowid, const char* torowid);	//范围提取多个Expr
@@ -83,29 +83,35 @@ private:
 	void writeToBuffer(int begin, char* text);
 	string getFileName();
 	Expr* get(int idx);
+	void remove(int idx);
+	int getEncodeLength(Expr*e);
 	static string encodeExprArray(Expr* e);
 	static Expr* decodeExprArray(string str);
 	
 private:
 	class putStrategy {
 	public:
-		virtual bool put(Block *blk, Expr* e) = 0;
+		virtual bool put(Block *blk, Expr* e, int from) = 0;
 	};
 	class putIntStrategy :public putStrategy {
 	public:
-		virtual bool put(Block *blk, Expr* e);
+		virtual bool put(Block *blk, Expr* e, int from);
 	};
 	class putFloatStrategy :public putStrategy {
 	public:
-		virtual bool put(Block *blk, Expr* e);
+		virtual bool put(Block *blk, Expr* e, int from);
 	};
 	class putStringStrategy :public putStrategy {
 	public:
-		virtual bool put(Block *blk, Expr* e);
+		virtual bool put(Block *blk, Expr* e, int from);
 	};
 	class putArrayStrategy :public putStrategy {
 	public:
-		virtual bool put(Block *blk, Expr* e);
+		virtual bool put(Block *blk, Expr* e, int from);
+	};
+	class putNullStrategy :public putStrategy {
+	public:
+		virtual bool put(Block *blk, Expr* e, int from);
 	};
 
 
@@ -129,6 +135,18 @@ private:
 	public:
 		virtual Expr* get(Block*blk, int idx);
 	};
+	class getDeletedStrategy :public getStrategy {
+	public:
+		virtual Expr* get(Block*blk, int idx);
+	};
+	class getUpdatedStrategy :public getStrategy {
+	public:
+		virtual Expr* get(Block*blk, int idx);
+	};
+	class getNullStrategy :public getStrategy {
+	public:
+		virtual Expr* get(Block*blk, int idx);
+	};
 
 private:
 	static putStrategy* getPutStrategy(ExprType type) {
@@ -141,6 +159,8 @@ private:
 			str = new putStringStrategy;
 		else if (type == kExprArray)
 			str = new putArrayStrategy;
+		else if (type == kExprLiteralNull)
+			str = new putNullStrategy;
 		return str;
 	}
 	static getStrategy* getGetStrategy(ExprType type) {
@@ -153,6 +173,12 @@ private:
 			str = new getStringStrategy;
 		else if (type == kExprArray)
 			str = new getArrayStrategy;
+		else if (type == kExprDeleted)
+			str = new  getDeletedStrategy;
+		else if (type == kExprUpdated)
+			str = new getUpdatedStrategy;
+		else if (type == kExprLiteralNull)
+			str = new getNullStrategy;
 		return str;
 	}
 };
