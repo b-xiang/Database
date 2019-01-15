@@ -33,7 +33,7 @@ private:
 	BlockMgr(const BlockMgr&) {}
 	BlockMgr& operator=(const BlockMgr&)=delete;
 public:
-	string update(const char* rowid, Expr* newContent);//更新元素
+	void update(const char* rowid, Expr* newContent);//更新元素
 	bool isFileFull(string fileid);										//文件是否已经放满
 	bool isAbleToInput(string fileid,string blockid, Expr* content);	//一个块内是否还能放入Expr
 	bool isAbleToInput(Block* block, Expr* content);					

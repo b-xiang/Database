@@ -627,6 +627,7 @@ namespace hsql {
 					auto rids=IdxMgr::getInstance()->getRowids(attr->oid);
 					auto r = BlockMgr::getInstance()->multipleGet(rids);
 					res.insert(res.begin(),r.begin(),r.end());
+					break;
 				}
 			}
 		}

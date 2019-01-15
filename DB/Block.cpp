@@ -59,7 +59,9 @@ bool Block::isAbleToUpdate(Expr * content)
 
 string Block::put(Expr* content, int beginPos)
 {
-	string rid = generateRowID();
+	string rid;
+	if(beginPos==-1)
+		rid=generateRowID();
 	putStrategy* str=nullptr;
 	if (content->type == kExprLiteralInt)
 		str = new putIntStrategy;
@@ -73,11 +75,24 @@ string Block::put(Expr* content, int beginPos)
 		str = new putNullStrategy;
 	assert(str);
 
-	if (beginPos == -1)
-		str->put(this, content, bodyBegin - getEncodeLength(content));
-	else
+	if (beginPos == -1) {
+		bodyBegin = bodyBegin - getEncodeLength(content);
+		str->put(this, content, bodyBegin);
+		recordnum++;
+		dataType.push_back(content->type);
+		recordpos.push_back(bodyBegin);
+	}
+	else {
+		if (beginPos < bodyBegin) {
+			bodyBegin = beginPos;
+			recordnum++;
+			dataType.push_back(content->type);
+			recordpos.push_back(bodyBegin);
+		}
 		str->put(this, content, beginPos);
+	}
 	delete str;
+	updateBuffer();
 	return rid;
 }
 
@@ -93,7 +108,7 @@ void Block::remove(const char * rowid)
 	remove(atoi(Conv64::to_10(rid).c_str()));
 }
 
-string Block::update(const char * rowid, Expr * newContent)
+void Block::update(const char * rowid, Expr * newContent)
 {
 	string s(rowid);
 	string doi = s.substr(0, 6);
@@ -113,7 +128,6 @@ string Block::update(const char * rowid, Expr * newContent)
 		updateAtCurPos = recordpos[r - 1] - recordpos[r] >= newlen;
 	if (updateAtCurPos) {
 		put(newContent, recordpos[r]);
-		return string(rowid);
 	}
 	
 	//在当前块进行update
@@ -133,7 +147,6 @@ string Block::update(const char * rowid, Expr * newContent)
 		}
 		strcpy(curpos + buffer, offsetstr.c_str());
 		put(newContent);
-		return generateRowID();
 	}
 	else {
 		//不能在本块进行update
@@ -159,7 +172,6 @@ string Block::update(const char * rowid, Expr * newContent)
 		curpos++;
 		strcpy(buffer + curpos, rowidStr.c_str());
 		curpos++;
-		return blk->generateRowID();
 	}
 }
 
@@ -617,12 +629,8 @@ bool Block::putStringStrategy::put(Block *blk, Expr* e, int from)
 bool Block::putArrayStrategy::put(Block * blk, Expr * e, int from)
 {
 	string res = encodeExprArray(e);
-	blk->bodyBegin = from;
-	strcpy(blk->buffer + blk->bodyBegin, res.data());
-	blk->recordnum++;
-	blk->dataType.push_back(e->type);
-	blk->recordpos.push_back(blk->bodyBegin);
-	blk->updateBuffer();
+	strcpy(blk->buffer + from, res.data());
+
 	return true;
 }
 
@@ -693,7 +701,7 @@ Expr * Block::getUpdatedStrategy::get(Block * blk, int idx)
 	if (blk->buffer[from] == CUR_BLOCK) {
 		strcpy(buff, blk->buffer + from + 1);
 		int newrid=atoi(Conv64::to_10(blk->getBlockid()).c_str()) + atoi(Conv64::to_10(buff).c_str());
-		return get(blk, newrid);
+		return blk->get(newrid);
 	}
 	else if (blk->buffer[from] == OTHER_BLOCK) {
 		from++;
@@ -704,7 +712,7 @@ Expr * Block::getUpdatedStrategy::get(Block * blk, int idx)
 		from += strlen(buff) + 1;
 		int newrid =atoi(Conv64::to_10(buff).c_str());
 		Block* newblk = BlockMgr::getInstance()->getBlock(blk->getFileid(), Conv64::to_64(blkid, 6));
-		return get(newblk, newrid);
+		return newblk->get(newrid);
 	}
 }
 

@@ -727,7 +727,7 @@ void User::updateFile()
 	exprlist.push_back(expr_code);
 	Expr* final = Expr::makeArray(&exprlist);
 
-	Dict::roidmap[userid]=make_pair(UserRoid,BlockMgr::getInstance()->update(Dict::getRowid(GetUserid()).c_str(),final));
+	BlockMgr::getInstance()->update(Dict::getRowid(GetUserid()).c_str(),final);
 
 }
 
@@ -853,7 +853,7 @@ void Database::updateFile()
 	exprlist.push_back(expr_curconnect);
 	exprlist.push_back(expr_datacl);
 	Expr* final = Expr::makeArray(&exprlist);
-	Dict::roidmap[oid] = make_pair(DatabaseRoid,BlockMgr::getInstance()->update(Dict::getRowid(GetOid()).c_str(),final));
+	BlockMgr::getInstance()->update(Dict::getRowid(oid).c_str(), final);
 }
 
 void Database::StoreToFile() {
@@ -973,7 +973,7 @@ void Class::updateFile()
 	exprlist.push_back(expr_relnatts);
 	exprlist.push_back(expr_haspkey);
 	Expr* final = Expr::makeArray(&exprlist);
-	Dict::roidmap[oid] = make_pair(ClassRoid,BlockMgr::getInstance()->update(Dict::getRowid(oid).c_str(),final));
+	BlockMgr::getInstance()->update(Dict::getRowid(oid).c_str(), final);
 }
 
 void Class::StoreToFile() {
@@ -1130,7 +1130,7 @@ void Attribute::updateFile()
 	exprlist.push_back(expr_colcard);
 	Expr* final = Expr::makeArray(&exprlist);
 
-	Dict::roidmap[oid] = make_pair(AttributeRoid,BlockMgr::getInstance()->update(Dict::getRowid(oid).c_str(), final));
+	BlockMgr::getInstance()->update(Dict::getRowid(oid).c_str(), final);
 }
 
 void Attribute::StoreToFile() {
