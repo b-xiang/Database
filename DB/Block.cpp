@@ -57,8 +57,9 @@ bool Block::isAbleToUpdate(Expr * content)
 	return bodyBegin - metaEnd - 20 > getEncodeLength(content);
 }
 
-bool Block::put(Expr* content, int beginPos)
+string Block::put(Expr* content, int beginPos)
 {
+	string rid = generateRowID();
 	putStrategy* str=nullptr;
 	if (content->type == kExprLiteralInt)
 		str = new putIntStrategy;
@@ -71,13 +72,13 @@ bool Block::put(Expr* content, int beginPos)
 	else if (content->type == kExprLiteralNull)
 		str = new putNullStrategy;
 	assert(str);
-	bool res;
+
 	if (beginPos == -1)
-		res = str->put(this, content, bodyBegin - getEncodeLength(content));
+		str->put(this, content, bodyBegin - getEncodeLength(content));
 	else
-		res = str->put(this, content, beginPos);
+		str->put(this, content, beginPos);
 	delete str;
-	return res;
+	return rid;
 }
 
 void Block::remove(const char * rowid)

@@ -118,8 +118,7 @@ vector<string> BlockMgr::multiplePut(vector<Expr*> records)
 			curblk = getLastAvailableBlock(curfile->fileid64);
 		}
 		if (curblk->isAbleToInput(r)) {
-			res.push_back(curblk->generateRowID());
-			curblk->put(r);
+			res.push_back(curblk->put(r));
 		}
 		else {
 			if (isFileFull(curfile->fileid64)) {
@@ -135,7 +134,7 @@ vector<string> BlockMgr::multiplePut(vector<Expr*> records)
 				curblk = nullptr;
 				curblk = getLastAvailableBlock(curfile->fileid64);
 			}
-			curblk->put(r);
+			res.push_back(curblk->put(r));
 		}
 	}
 	releaseBlk(curblk);

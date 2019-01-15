@@ -57,7 +57,7 @@ public:
 	}
 	bool isAbleToInput(Expr* content);		//检测一个Expr是否能被放进块中
 	bool isAbleToUpdate(Expr* content);	//检测一个被更新的Expr是否能被放进块中
-	bool put(Expr* content,int beginPos=-1);			//向块中放入数据，Expr参见sql/Expr.h
+	string put(Expr* content,int beginPos=-1);			//向块中放入数据，Expr参见sql/Expr.h
 	void remove(const char* rowid);	//删除块中元素
 	string update(const char* rowid, Expr* newContent);//更新元素
 	Expr* get(const char* rowid);		//按照块内行标号从块内提取数据，生成Expr

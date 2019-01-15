@@ -14,10 +14,17 @@
 
 #include<iostream>
 #include"sql\Expr.h"
+#include <map>
 using namespace std;
 using namespace hsql;
 
 
+enum RoidType {
+	DatabaseRoid,
+	UserRoid,
+	AttributeRoid,
+	ClassRoid
+};
 
 /*------------------------------------
 *
@@ -313,11 +320,13 @@ private:
 private:
 	static string curSchema;
 public:
-
+	static map<int,pair <RoidType,string>> roidmap;
 	void InitDictionary();					//创建所有数据字典表文件，整个程序只可以调用一次，该函数创建五个数据字典文件，
 											//同时为其分配一个块，并记录第一个块的块号在文件"./data/firstblockid.bid"中
 
 	void Init();							//数据字典初始化，初始化oid，将最新可以分配的oid加载到程序中
+	static void Initmap();
+	static void storemap();
 
 	int DeliverOid();							//分配一个oid
 												//当生成一个数据库对象（用户、数据库、表、索引、属性）的时候，用该函数得到该对象的oid

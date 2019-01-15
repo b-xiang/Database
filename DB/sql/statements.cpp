@@ -407,7 +407,7 @@ namespace hsql {
 					}
 				}
 				visit.push_back(found);
-				if (!found) {
+				if (!found) {//¼ì²â·Ç¿Õ
 					if (attr->IsNotNull()) {
 						delete user, db, cls;
 						for (auto attr : attrs) {
@@ -422,14 +422,17 @@ namespace hsql {
 						exprs.push_back(Expr::makeNullLiteral());
 					}
 				}
+				if (found) {
+
+				}
 			}
 			Expr* final = Expr::makeArray(&exprs);
 			Block* blk=BlockMgr::getInstance()->getLastAvailableBlock(cls->relfileid);
-			blk->put(final);
-			string rid=blk->generateRowID();
+			string rid=blk->put(final);
+			
 			for (int i = 0; i < attrs.size();i++) {
 				if (visit[i]&&attrs[i]->IsPkey()) {
-					IdxMgr::getInstance();
+					IdxMgr::getInstance()->addRecord(attrs[i]->oid,exprs[i],rid);
 				}
 			}
 
@@ -593,6 +596,7 @@ namespace hsql {
 
 	string SelectStatement::execute(string username)
 	{
+		stringstream ss;
 		vector<Expr*> res;
 		Dict* dict = Dict::getInstance();
 		User* user = dict->GetUser(username);
@@ -631,6 +635,26 @@ namespace hsql {
 		}
 
 
+		//display
+		if ((*selectList)[0]->type == kExprStar) {
+			for (auto attr : attrs) {
+				ss << attr->name << "\t";
+			}
+			ss << endl;
+		}
+		for (auto r : res) {
+			for (auto item : (*r->exprList)) {
+				if (item->type == kExprLiteralInt)
+					ss << item->ival << "\t";
+				else if (item->type == kExprLiteralFloat)
+					ss << item->fval << "\t";
+				else if (item->type == kExprLiteralString)
+					ss << item->name << "\t";
+				else if (item->type == kExprLiteralNull)
+					ss << "NULL" << "\t";
+			}
+			ss << endl;
+		}
 
 		delete user;
 		delete db;
@@ -638,7 +662,7 @@ namespace hsql {
 		for (auto attr : attrs) {
 			delete attr;
 		}
-		return "";
+		return ss.str();
 	}
 
 	// UpdateStatement

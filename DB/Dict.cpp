@@ -2,6 +2,7 @@
 #include<iostream>
 #include<fstream>
 #include <direct.h>
+#include <map>
 #include <io.h>
 #include"BlockMgr.h"
 #include"sql\Expr.h"
@@ -12,6 +13,7 @@ using namespace std;
 
 Dict* Dict::instance = nullptr;
 string Dict::curSchema;
+map<int, pair <RoidType, string>> Dict::roidmap;
 
 Dict * Dict::getInstance()
 {
@@ -28,6 +30,7 @@ void Dict::release()
 		delete instance;
 		instance = nullptr;
 	}
+	storemap();
 }
 
 void Dict::InitDictionary()
@@ -133,7 +136,9 @@ void Dict::Init()
 		StoreUser(user);
 	}
 
+	Initmap();
 	Oid::GetInstance();						//新建oid计数
+	
 
 	//将各个文件第一块的块号放到类中
 	ifstream fin("./data/firstblockid.bid", ios::in);
@@ -150,6 +155,37 @@ void Dict::Init()
 
 	fin.close();
 	fin.clear();
+}
+
+void Dict::Initmap()
+{
+	ifstream fin("./data/dict.roid", ios::in);			//打开保存rowid的文件
+	string line;
+	while (getline(fin, line)) {
+		if (line != "") {
+			Expr*expr = Block::decodeExprArray(line);
+			roidmap[(*(expr->exprList))[0]->ival]=make_pair((RoidType)(*(expr->exprList))[1]->ival,(*(expr->exprList))[2]->name);
+		}
+	}
+}
+
+void Dict::storemap()
+{
+	ofstream fout("./data/dict.roid", ios::out);			//打开保存rowid的文件
+	for (auto item : roidmap) {
+		vector<Expr*> exprs;
+		Expr* oidExpr = Expr::makeLiteral((int64_t)item.first);
+		Expr* roidTypeExpr = Expr::makeLiteral((int64_t)item.second.first);
+		Expr* ridExpr = Expr::makeLiteral(item.second.second.c_str());
+		exprs.push_back(oidExpr);
+		exprs.push_back(roidTypeExpr);
+		exprs.push_back(ridExpr);
+		Expr* resExpr = Expr::makeArray(&exprs);
+		string resstr = Block::encodeExprArray(resExpr);
+		fout << resstr << endl;
+	}
+	fout.close();
+	fout.clear();
 }
 
 int Dict::DeliverOid() {
@@ -179,27 +215,23 @@ Index*	Dict::CreateIndex() {
 
 User*	Dict::GetUser(string username) {
 	User* targetuser = CreateUser();			//创建一个空的User用于装结果
-
 	string tempusername;						//用于装读出的username
-	string tempblockid = userblock1;			//遍历文件用的块
-
-	//遍历所有块，同时在文件中找到对应项目，并且判断username是否相等
-	do {
-		Block* tempblock = BlockMgr::getInstance()->getBlock(targetuser->fileid, tempblockid);
-		vector<Expr*> tempexpr = tempblock->get(0, tempblock->GetRecordnum()-1);
-		vector<Expr*>::iterator iter;
-		for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
-			tempusername = (*((*iter)->exprList))[1]->name;
-			if (tempusername == username) {		//找到
-				targetuser->SetUserid((*((*iter)->exprList))[0]->ival);
-				targetuser->SetUsername(username);
-				targetuser->SetCode((*((*iter)->exprList))[2]->name);
-				return targetuser;
-			}
+	vector<string> rowidList;
+	for (auto item : roidmap) {
+		if (item.second.first == UserRoid)
+			rowidList.push_back(item.second.second);
+	}
+	vector<Expr*>tempexpr = BlockMgr::getInstance()->multipleGet(rowidList);
+	vector<Expr*>::iterator iter;
+	for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
+		tempusername = (*((*iter)->exprList))[1]->name;
+		if (tempusername == username) {		//找到
+			targetuser->SetUserid((*((*iter)->exprList))[0]->ival);
+			targetuser->SetUsername(username);
+			targetuser->SetCode((*((*iter)->exprList))[2]->name);
+			return targetuser;
 		}
-		tempblockid = tempblock->GetNextblockid();
-	} while (tempblockid != "");						//如果下一个块的块号是空的话，表示所有文件都遍历完了
-
+	}
 	return nullptr;			//如果都遍历完了还没找到，那么不存在这一项
 }
 
@@ -212,34 +244,33 @@ Database*	Dict::GetDatabase(User* user, string dbname) {
 	int tempuserid;
 	string tempdaname;
 
-	string tempblockid = databaseblock1;			//遍历文件用的块
+	vector<string> rowidList;
+	for (auto item : roidmap) {
+		if (item.second.first == DatabaseRoid)
+			rowidList.push_back(item.second.second);
+	}
+	vector<Expr*>tempexpr = BlockMgr::getInstance()->multipleGet(rowidList);
 
-	//遍历所有块，同时在文件中找到对应项目，并且判断对应的userid和dbname是否相等
-	do {
-		Block* tempblock = BlockMgr::getInstance()->getBlock(targetdatabase->fileid, tempblockid);
-		vector<Expr*> tempexpr = tempblock->get(0, tempblock->GetRecordnum()-1);
-		vector<Expr*>::iterator iter;
-		for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
-			tempuserid = (*((*iter)->exprList))[2]->ival;
-			tempdaname = (*((*iter)->exprList))[1]->name;
+	vector<Expr*>::iterator iter;
+	for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
+		tempuserid = (*((*iter)->exprList))[2]->ival;
+		tempdaname = (*((*iter)->exprList))[1]->name;
 
-			if (tempdaname == dbname && tempuserid == userid) {		//找到
-				targetdatabase->oid = ((*((*iter)->exprList))[0]->ival);
-				targetdatabase->datname = dbname;
-				targetdatabase->ownerid = ((*((*iter)->exprList))[2]->ival);
-				targetdatabase->datconnlimit = ((*((*iter)->exprList))[3]->ival);
-				targetdatabase->curconnect = ((*((*iter)->exprList))[4]->ival);
-				vector<Expr*> gg = *((*((*iter)->exprList))[5]->exprList);
-				vector<Expr*>::iterator it;
-				for (it = gg.begin(); it != gg.end(); it++) {
-					targetdatabase->datacl.push_back((*it)->ival);
-				}
-
-				return targetdatabase;
+		if (tempdaname == dbname && tempuserid == userid) {		//找到
+			targetdatabase->oid = ((*((*iter)->exprList))[0]->ival);
+			targetdatabase->datname = dbname;
+			targetdatabase->ownerid = ((*((*iter)->exprList))[2]->ival);
+			targetdatabase->datconnlimit = ((*((*iter)->exprList))[3]->ival);
+			targetdatabase->curconnect = ((*((*iter)->exprList))[4]->ival);
+			vector<Expr*> gg = *((*((*iter)->exprList))[5]->exprList);
+			vector<Expr*>::iterator it;
+			for (it = gg.begin(); it != gg.end(); it++) {
+				targetdatabase->datacl.push_back((*it)->ival);
 			}
+
+			return targetdatabase;
 		}
-		tempblockid = tempblock->GetNextblockid();
-	} while (tempblockid != "");						//如果下一个块的块号是空的话，表示所有文件都遍历完了
+	}
 
 	return nullptr;			//如果都遍历完了还没找到，那么不存在这一项
 }
@@ -255,33 +286,33 @@ vector<Database*> Dict::getDatabases(User* user)
 	int tempuserid;
 	string tempdaname;
 
-	string tempblockid = databaseblock1;			//遍历文件用的块
+	vector<string> rowidList;
+	for (auto item : roidmap) {
+		if (item.second.first == DatabaseRoid)
+			rowidList.push_back(item.second.second);
+	}
+	vector<Expr*>tempexpr = BlockMgr::getInstance()->multipleGet(rowidList);
 
-	//遍历所有块，同时在文件中找到对应项目，并且判断对应的userid和dbname是否相等
-	do {
-		Block* tempblock = BlockMgr::getInstance()->getBlock(targetdatabase->fileid, tempblockid);
-		vector<Expr*> tempexpr = tempblock->get(0, tempblock->GetRecordnum()-1);
-		vector<Expr*>::iterator iter;
-		for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
-			tempuserid = (*((*iter)->exprList))[2]->ival;
-			tempdaname = (*((*iter)->exprList))[1]->name;
+	vector<Expr*>::iterator iter;
+	for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
+		tempuserid = (*((*iter)->exprList))[2]->ival;
+		tempdaname = (*((*iter)->exprList))[1]->name;
 
-			if (tempuserid == userid) {		//找到
-				targetdatabase->oid = ((*((*iter)->exprList))[0]->ival);
-				targetdatabase->datname = ((*((*iter)->exprList))[1]->name);
-				targetdatabase->ownerid = ((*((*iter)->exprList))[2]->ival);
-				targetdatabase->datconnlimit = ((*((*iter)->exprList))[3]->ival);
-				targetdatabase->curconnect = ((*((*iter)->exprList))[4]->ival);
-				vector<Expr*> gg = *((*((*iter)->exprList))[5]->exprList);
-				vector<Expr*>::iterator it;
-				for (it = gg.begin(); it != gg.end(); it++) {
-					targetdatabase->datacl.push_back((*it)->ival);
-				}
-				res.push_back(new Database(*targetdatabase));
+		if (tempuserid == userid) {		//找到
+			targetdatabase->oid = ((*((*iter)->exprList))[0]->ival);
+			targetdatabase->datname = ((*((*iter)->exprList))[1]->name);
+			targetdatabase->ownerid = ((*((*iter)->exprList))[2]->ival);
+			targetdatabase->datconnlimit = ((*((*iter)->exprList))[3]->ival);
+			targetdatabase->curconnect = ((*((*iter)->exprList))[4]->ival);
+			vector<Expr*> gg = *((*((*iter)->exprList))[5]->exprList);
+			vector<Expr*>::iterator it;
+			for (it = gg.begin(); it != gg.end(); it++) {
+				targetdatabase->datacl.push_back((*it)->ival);
 			}
+			res.push_back(new Database(*targetdatabase));
 		}
-		tempblockid = tempblock->GetNextblockid();
-	} while (tempblockid != "");						//如果下一个块的块号是空的话，表示所有文件都遍历完了
+	}
+
 	delete targetdatabase;
 	return res;
 }
@@ -294,44 +325,45 @@ Class*	Dict::GetClass(Database* tdatabase, string relationname) {
 
 	int temp_databaseid;
 	string temp_relationname;
-	string tempblockid = classblock1;			//遍历文件用的块
 
-	//遍历所有块，同时在文件中找到对应项目，并且判断databaseid和relationname是否相等
-	do {
-		Block* tempblock = BlockMgr::getInstance()->getBlock(targetclass->fileid, tempblockid);
-		vector<Expr*> tempexpr = tempblock->get(0, tempblock->GetRecordnum()-1);
-		vector<Expr*>::iterator iter;
-		for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
-			temp_databaseid = (*((*iter)->exprList))[1]->ival;
+		
+	vector<string> rowidList;
+	for (auto item : roidmap) {
+		if (item.second.first == ClassRoid)
+			rowidList.push_back(item.second.second);
+	}
+	vector<Expr*>tempexpr = BlockMgr::getInstance()->multipleGet(rowidList);
 
-			temp_relationname = (*((*iter)->exprList))[2]->name;
+	vector<Expr*>::iterator iter;
+	for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
+		temp_databaseid = (*((*iter)->exprList))[1]->ival;
 
-			if (temp_databaseid == databaseid && temp_relationname == relationname) {		//找到
+		temp_relationname = (*((*iter)->exprList))[2]->name;
 
-				targetclass->oid = ((*((*iter)->exprList))[0]->ival);
+		if (temp_databaseid == databaseid && temp_relationname == relationname) {		//找到
 
-				targetclass->databaseid = ((*((*iter)->exprList))[1]->ival);
+			targetclass->oid = ((*((*iter)->exprList))[0]->ival);
 
-				targetclass->relname = ((*((*iter)->exprList))[2]->name);
+			targetclass->databaseid = ((*((*iter)->exprList))[1]->ival);
 
-				targetclass->relfileid = ((*((*iter)->exprList))[3]->name);
+			targetclass->relname = ((*((*iter)->exprList))[2]->name);
 
-				targetclass->relblockid = ((*((*iter)->exprList))[4]->name);
+			targetclass->relfileid = ((*((*iter)->exprList))[3]->name);
 
-				targetclass->reltuples = ((*((*iter)->exprList))[5]->ival);
+			targetclass->relblockid = ((*((*iter)->exprList))[4]->name);
 
-				targetclass->hasindex = ((*((*iter)->exprList))[6]->ival);
+			targetclass->reltuples = ((*((*iter)->exprList))[5]->ival);
 
-				targetclass->relkind = *((*((*iter)->exprList))[7]->name);
+			targetclass->hasindex = ((*((*iter)->exprList))[6]->ival);
 
-				targetclass->relnatts = ((*((*iter)->exprList))[8]->ival);
+			targetclass->relkind = *((*((*iter)->exprList))[7]->name);
 
-				targetclass->haspkey = ((*((*iter)->exprList))[9]->ival);
-				return targetclass;
-			}
+			targetclass->relnatts = ((*((*iter)->exprList))[8]->ival);
+
+			targetclass->haspkey = ((*((*iter)->exprList))[9]->ival);
+			return targetclass;
 		}
-		tempblockid = tempblock->GetNextblockid();
-	} while (tempblockid != "");						//如果下一个块的块号是空的话，表示所有文件都遍历完了
+	}
 
 	return nullptr;			//如果都遍历完了还没找到，那么不存在这一项
 
@@ -346,44 +378,44 @@ vector<Class*> Dict::getClasses(Database * tdatabase)
 
 	int temp_databaseid;
 	string temp_relationname;
-	string tempblockid = classblock1;			//遍历文件用的块
 
-	//遍历所有块，同时在文件中找到对应项目，并且判断databaseid和relationname是否相等
-	do {
-		Block* tempblock = BlockMgr::getInstance()->getBlock(targetclass->fileid, tempblockid);
-		vector<Expr*> tempexpr = tempblock->get(0, tempblock->GetRecordnum() - 1);
-		vector<Expr*>::iterator iter;
-		for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
-			temp_databaseid = (*((*iter)->exprList))[1]->ival;
 
-			temp_relationname = (*((*iter)->exprList))[2]->name;
+	vector<string> rowidList;
+	for (auto item : roidmap) {
+		if (item.second.first == ClassRoid)
+			rowidList.push_back(item.second.second);
+	}
+	vector<Expr*>tempexpr = BlockMgr::getInstance()->multipleGet(rowidList);
+	vector<Expr*>::iterator iter;
+	for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
+		temp_databaseid = (*((*iter)->exprList))[1]->ival;
 
-			if (temp_databaseid == databaseid) {		//找到
+		temp_relationname = (*((*iter)->exprList))[2]->name;
 
-				targetclass->oid = ((*((*iter)->exprList))[0]->ival);
+		if (temp_databaseid == databaseid) {		//找到
 
-				targetclass->databaseid = ((*((*iter)->exprList))[1]->ival);
+			targetclass->oid = ((*((*iter)->exprList))[0]->ival);
 
-				targetclass->relname = ((*((*iter)->exprList))[2]->name);
+			targetclass->databaseid = ((*((*iter)->exprList))[1]->ival);
 
-				targetclass->relfileid = ((*((*iter)->exprList))[3]->name);
+			targetclass->relname = ((*((*iter)->exprList))[2]->name);
 
-				targetclass->relblockid = ((*((*iter)->exprList))[4]->name);
+			targetclass->relfileid = ((*((*iter)->exprList))[3]->name);
 
-				targetclass->reltuples = ((*((*iter)->exprList))[5]->ival);
+			targetclass->relblockid = ((*((*iter)->exprList))[4]->name);
 
-				targetclass->hasindex = ((*((*iter)->exprList))[6]->ival);
+			targetclass->reltuples = ((*((*iter)->exprList))[5]->ival);
 
-				targetclass->relkind = *((*((*iter)->exprList))[7]->name);
+			targetclass->hasindex = ((*((*iter)->exprList))[6]->ival);
 
-				targetclass->relnatts = ((*((*iter)->exprList))[8]->ival);
+			targetclass->relkind = *((*((*iter)->exprList))[7]->name);
 
-				targetclass->haspkey = ((*((*iter)->exprList))[9]->ival);
-				res.push_back(targetclass);
-			}
+			targetclass->relnatts = ((*((*iter)->exprList))[8]->ival);
+
+			targetclass->haspkey = ((*((*iter)->exprList))[9]->ival);
+			res.push_back(targetclass);
 		}
-		tempblockid = tempblock->GetNextblockid();
-	} while (tempblockid != "");						//如果下一个块的块号是空的话，表示所有文件都遍历完了
+	}
 
 	return res;
 
@@ -397,59 +429,53 @@ vector<Attribute*>	Dict::GetAttribute(Class* table) {
 	int totalnum = table->relnatts;				//表总共有几个属性
 
 	int i = 0;		//找到几个属性
-	string tempblockid = attributeblock1;			//遍历文件用的块
 	int temp_relid;			//属性所属的表的id
 
-	//遍历所有块，同时在文件中找到对应项目，并且判断databaseid和relationname是否相等
-	do {
+	Attribute* tempattritube = CreateAttribute();
+	delete tempattritube;
 
-		Attribute* tempattritube = CreateAttribute();
+	vector<string> rowidList;
+	for(auto item:roidmap){
+		if (item.second.first == AttributeRoid)
+			rowidList.push_back(item.second.second);
+	}
+	vector<Expr*>tempexpr = BlockMgr::getInstance()->multipleGet(rowidList);
 
-		Block* tempblock = BlockMgr::getInstance()->getBlock(tempattritube->fileid, tempblockid);
+	vector<Expr*>::iterator iter;
+	for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
+		temp_relid = (*((*iter)->exprList))[1]->ival;
 
-		delete tempattritube;
+		if (temp_relid == relid) {		//找到
 
-		vector<Expr*> tempexpr = tempblock->get(0, tempblock->GetRecordnum()-1);
+			Attribute* targetattribute = CreateAttribute();			//创建一个空的Attribute用于装结果
 
-		vector<Expr*>::iterator iter;
-		for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
-			temp_relid = (*((*iter)->exprList))[1]->ival;
+			targetattribute->oid = ((*((*iter)->exprList))[0]->ival);
 
-			if (temp_relid == relid) {		//找到
+			targetattribute->relid = ((*((*iter)->exprList))[1]->ival);
 
-				Attribute* targetattribute = CreateAttribute();			//创建一个空的Attribute用于装结果
+			targetattribute->name = ((*((*iter)->exprList))[2]->name);
 
-				targetattribute->oid = ((*((*iter)->exprList))[0]->ival);
+			targetattribute->type = (ExprType)((*((*iter)->exprList))[3]->ival);
 
-				targetattribute->relid = ((*((*iter)->exprList))[1]->ival);
+			targetattribute->attnum = ((*((*iter)->exprList))[4]->ival);
 
-				targetattribute->name = ((*((*iter)->exprList))[2]->name);
+			targetattribute->varcharlen = ((*((*iter)->exprList))[5]->ival);
 
-				targetattribute->type = (ExprType)((*((*iter)->exprList))[3]->ival);
+			targetattribute->notnull = ((*((*iter)->exprList))[6]->ival);
 
-				targetattribute->attnum = ((*((*iter)->exprList))[4]->ival);
+			targetattribute->pkey = ((*((*iter)->exprList))[7]->ival);
 
-				targetattribute->varcharlen = ((*((*iter)->exprList))[5]->ival);
+			targetattribute->colcard = ((*((*iter)->exprList))[8]->ival);
 
-				targetattribute->notnull = ((*((*iter)->exprList))[6]->ival);
+			allarrtibute.push_back(targetattribute);
 
-				targetattribute->pkey = ((*((*iter)->exprList))[7]->ival);
+			i++;
 
-				targetattribute->colcard = ((*((*iter)->exprList))[8]->ival);
-
-				allarrtibute.push_back(targetattribute);
-
-				i++;
-
-				if (i == totalnum) {
-					return allarrtibute;
-				}
+			if (i == totalnum) {
+				return allarrtibute;
 			}
 		}
-
-		tempblockid = tempblock->GetNextblockid();
-
-	} while (tempblockid != "");						//如果下一个块的块号是空的话，表示所有文件都遍历完了
+	}
 
 	return allarrtibute;			//没找到或者没找全都返回
 
@@ -461,45 +487,41 @@ Attribute*	Dict::GetAttribute(int attritubeid) {
 	Attribute* targetattribute = CreateAttribute();			//创建一个空的Attribute用于装结果
 
 	int temp_attributeid;						//用于装读出的attributeid
-	string tempblockid = attributeblock1;			//遍历文件用的块
 
-												//遍历所有块，同时在文件中找到对应项目，并且判断attributeid是否相等
-	do {
-		Block* tempblock = BlockMgr::getInstance()->getBlock(targetattribute->fileid, tempblockid);
+	vector<string> rowidList;
+	for (auto item : roidmap) {
+		if (item.second.first == AttributeRoid)
+			rowidList.push_back(item.second.second);
+	}
+	vector<Expr*>tempexpr = BlockMgr::getInstance()->multipleGet(rowidList);
+	vector<Expr*>::iterator iter;
+	for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
 
-		vector<Expr*> tempexpr = tempblock->get(0, tempblock->GetRecordnum()-1);
-		vector<Expr*>::iterator iter;
-		for (iter = tempexpr.begin(); iter != tempexpr.end(); iter++) {
+		temp_attributeid = (*((*iter)->exprList))[0]->ival;
 
-			temp_attributeid = (*((*iter)->exprList))[0]->ival;
+		if (temp_attributeid == attritubeid) {		//找到
 
-			if (temp_attributeid == attritubeid) {		//找到
+			targetattribute->oid = ((*((*iter)->exprList))[0]->ival);
 
-				targetattribute->oid = ((*((*iter)->exprList))[0]->ival);
+			targetattribute->relid = ((*((*iter)->exprList))[1]->ival);
 
-				targetattribute->relid = ((*((*iter)->exprList))[1]->ival);
+			targetattribute->name = ((*((*iter)->exprList))[2]->name);
 
-				targetattribute->name = ((*((*iter)->exprList))[2]->name);
+			targetattribute->type = ((*((*iter)->exprList))[3]->type);
 
-				targetattribute->type = ((*((*iter)->exprList))[3]->type);
+			targetattribute->attnum = ((*((*iter)->exprList))[4]->ival);
 
-				targetattribute->attnum = ((*((*iter)->exprList))[4]->ival);
+			targetattribute->varcharlen = ((*((*iter)->exprList))[5]->ival);
 
-				targetattribute->varcharlen = ((*((*iter)->exprList))[5]->ival);
+			targetattribute->notnull = ((*((*iter)->exprList))[6]->ival);
 
-				targetattribute->notnull = ((*((*iter)->exprList))[6]->ival);
+			targetattribute->pkey = ((*((*iter)->exprList))[7]->ival);
 
-				targetattribute->pkey = ((*((*iter)->exprList))[7]->ival);
+			targetattribute->colcard = ((*((*iter)->exprList))[8]->ival);
 
-				targetattribute->colcard = ((*((*iter)->exprList))[8]->ival);
-
-				return targetattribute;
-			}
+			return targetattribute;
 		}
-
-		tempblockid = tempblock->GetNextblockid();
-	} while (tempblockid != "");						//如果下一个块的块号是空的话，表示所有文件都遍历完了
-
+	}
 	return nullptr;			//如果都遍历完了还没找到，那么不存在这一项
 }
 
@@ -609,17 +631,7 @@ void Dict::UpdateAttribute(Attribute * tattribute)
 
 string Dict::getRowid(int oid)
 {
-	ifstream fin("./data/dict.roid",ios::in);			//打开保存rowid的文件
-	string line;
-	string res = "";
-	while (getline(fin, line)) {
-		if (line != "") {
-			Expr*expr =  Block::decodeExprArray(line);
-			if ((*(expr->exprList))[0]->ival == oid)
-				res = (*(expr->exprList))[1]->name;
-		}
-	}
-	return res;
+	return roidmap[oid].second;
 }
 
 
@@ -715,7 +727,8 @@ void User::updateFile()
 	exprlist.push_back(expr_code);
 	Expr* final = Expr::makeArray(&exprlist);
 
-	BlockMgr::getInstance()->update(Dict::getRowid(GetUserid()).c_str(),final);
+	Dict::roidmap[userid]=make_pair(UserRoid,BlockMgr::getInstance()->update(Dict::getRowid(GetUserid()).c_str(),final));
+
 }
 
 void User::StoreToFile() {
@@ -733,21 +746,10 @@ void User::StoreToFile() {
 
 	string rowid;
 	Block* targetblock = BlockMgr::getInstance()->getLastAvailableBlock(fileid);		//取得file的最后一个可用的块
-	targetblock->put(final);									//将数据放入可以放入的块
-	rowid = targetblock->generateRowID();						//得到rowid
+	rowid = targetblock->put(final);									//将数据放入可以放入的块
 	targetblock->updateBuffer();
 
-	ofstream fout("./data/dict.roid", ios::out | ios::app);			//打开保存rowid的文件
-	vector<Expr*> exprs;
-	Expr* oidExpr = Expr::makeLiteral((int64_t)userid);
-	Expr*roidExpr = Expr::makeLiteral(rowid.c_str());
-	exprs.push_back(oidExpr);
-	exprs.push_back(roidExpr);
-	Expr* resExpr = Expr::makeArray(&exprs);
-	string resstr = Block::encodeExprArray(resExpr);
-	fout << resstr << endl;
-	fout.close();
-	fout.clear();
+	Dict::roidmap[userid] =make_pair(UserRoid, rowid);
 }
 
 
@@ -851,7 +853,7 @@ void Database::updateFile()
 	exprlist.push_back(expr_curconnect);
 	exprlist.push_back(expr_datacl);
 	Expr* final = Expr::makeArray(&exprlist);
-	BlockMgr::getInstance()->update(Dict::getRowid(GetOid()).c_str(),final);
+	Dict::roidmap[oid] = make_pair(DatabaseRoid,BlockMgr::getInstance()->update(Dict::getRowid(GetOid()).c_str(),final));
 }
 
 void Database::StoreToFile() {
@@ -884,21 +886,11 @@ void Database::StoreToFile() {
 	string rowid;
 	Block* targetblock = BlockMgr::getInstance()->getLastAvailableBlock(fileid);		//取得file的最后一个可用的块
 	targetblock->setBlockType(dictionary);
-	targetblock->put(final);									//将数据放入可以放入的块
-	rowid = targetblock->generateRowID();						//得到rowid
+	rowid = targetblock->put(final);									//将数据放入可以放入的块
+
 	targetblock->updateBuffer();
 
-	ofstream fout("./data/dict.roid", ios::out|ios::app);			//打开保存rowid的文件
-	vector<Expr*> exprs;
-	Expr* oidExpr = Expr::makeLiteral((int64_t)oid);
-	Expr*roidExpr = Expr::makeLiteral(rowid.c_str());
-	exprs.push_back(oidExpr);
-	exprs.push_back(roidExpr);
-	Expr* resExpr = Expr::makeArray(&exprs);
-	string resstr=Block::encodeExprArray(resExpr);
-	fout << resstr << endl;
-	fout.close();
-	fout.clear();
+	Dict::roidmap[oid] =make_pair(DatabaseRoid, rowid);
 }
 
 /*-------------------------------------------------*/
@@ -981,7 +973,7 @@ void Class::updateFile()
 	exprlist.push_back(expr_relnatts);
 	exprlist.push_back(expr_haspkey);
 	Expr* final = Expr::makeArray(&exprlist);
-	BlockMgr::getInstance()->update(Dict::getRowid(oid).c_str(),final);
+	Dict::roidmap[oid] = make_pair(ClassRoid,BlockMgr::getInstance()->update(Dict::getRowid(oid).c_str(),final));
 }
 
 void Class::StoreToFile() {
@@ -1014,21 +1006,10 @@ void Class::StoreToFile() {
 	//放入块中
 	string rowid;
 	Block* targetblock = BlockMgr::getInstance()->getLastAvailableBlock(fileid);		//取得file的最后一个可用的块
-	targetblock->put(final);									//将数据放入可以放入的块
-	rowid = targetblock->generateRowID();						//得到rowid
+	rowid = targetblock->put(final);									//将数据放入可以放入的块
 	targetblock->updateBuffer();
 
-	ofstream fout("./data/dict.roid", ios::out | ios::app);			//打开保存rowid的文件
-	vector<Expr*> exprs;
-	Expr* oidExpr = Expr::makeLiteral((int64_t)oid);
-	Expr*roidExpr = Expr::makeLiteral(rowid.c_str());
-	exprs.push_back(oidExpr);
-	exprs.push_back(roidExpr);
-	Expr* resExpr = Expr::makeArray(&exprs);
-	string resstr = Block::encodeExprArray(resExpr);
-	fout << resstr << endl;
-	fout.close();
-	fout.clear();
+	Dict::roidmap[oid] = make_pair(ClassRoid,rowid);
 }
 
 
@@ -1149,7 +1130,7 @@ void Attribute::updateFile()
 	exprlist.push_back(expr_colcard);
 	Expr* final = Expr::makeArray(&exprlist);
 
-	BlockMgr::getInstance()->update(Dict::getRowid(oid).c_str(), final);
+	Dict::roidmap[oid] = make_pair(AttributeRoid,BlockMgr::getInstance()->update(Dict::getRowid(oid).c_str(), final));
 }
 
 void Attribute::StoreToFile() {
@@ -1182,21 +1163,10 @@ void Attribute::StoreToFile() {
 	//放入块中
 	string rowid;
 	Block* targetblock = BlockMgr::getInstance()->getLastAvailableBlock(fileid);		//取得file的最后一个可用的块
-	targetblock->put(final);									//将数据放入可以放入的块
-	rowid = targetblock->generateRowID();						//得到rowid
+	rowid =targetblock->put(final);									//将数据放入可以放入的块
 	targetblock->updateBuffer();
 
-	ofstream fout("./data/dict.roid", ios::out | ios::app);			//打开保存rowid的文件
-	vector<Expr*> exprs;
-	Expr* oidExpr = Expr::makeLiteral((int64_t)oid);
-	Expr*roidExpr = Expr::makeLiteral(rowid.c_str());
-	exprs.push_back(oidExpr);
-	exprs.push_back(roidExpr);
-	Expr* resExpr = Expr::makeArray(&exprs);
-	string resstr = Block::encodeExprArray(resExpr);
-	fout << resstr << endl;
-	fout.close();
-	fout.clear();
+	Dict::roidmap[oid] = make_pair(AttributeRoid,rowid);
 }
 
 
@@ -1286,8 +1256,7 @@ void Index::StoreToFile() {
 	//放入块中
 	string rowid;
 	Block* targetblock = BlockMgr::getInstance()->getLastAvailableBlock(fileid);		//取得file的最后一个可用的块
-	targetblock->put(final);									//将数据放入可以放入的块
-	rowid = targetblock->generateRowID();						//得到rowid
+	rowid = targetblock->put(final);									//将数据放入可以放入的块
 	targetblock->updateBuffer();
 
 }

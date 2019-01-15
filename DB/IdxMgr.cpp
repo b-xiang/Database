@@ -41,9 +41,8 @@ void IdxMgr::createIdx(int attrOid)
 void IdxMgr::addRecord(int attrOid, Expr * expr, string rid)
 {
 	BPlusTree* bpt = getBPT(attrOid);
-	BPTKeyType key;
-	
-		bpt->insert(key, rid);
+	BPTKeyType key = generateKey(expr);
+	bpt->insert(key, rid);
 }
 
 vector<BPTDataType> IdxMgr::getRowids(int attrOid, vector<Expr*> expr)
