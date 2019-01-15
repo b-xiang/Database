@@ -75,6 +75,8 @@ public:
 	BlockType getBlockType();		//ªÒ»°blockType
 	const char* getFileid();
 	const char* getBlockid();
+	static string encodeExprArray(Expr* e);
+	static Expr* decodeExprArray(string str);
 private:
 	int getMetaEnd();
 	void setMetaEnd(int _metaEnd);
@@ -85,9 +87,6 @@ private:
 	Expr* get(int idx);
 	void remove(int idx);
 	int getEncodeLength(Expr*e);
-	static string encodeExprArray(Expr* e);
-	static Expr* decodeExprArray(string str);
-	
 private:
 	class putStrategy {
 	public:

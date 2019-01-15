@@ -5,6 +5,7 @@
 #include <io.h>
 #include"BlockMgr.h"
 #include"sql\Expr.h"
+#include "Block.h"
 #include"Block.h"
 
 using namespace std;
@@ -585,6 +586,42 @@ void Dict::StoreIndex(Index* tindex) {
 	tindex->StoreToFile();
 }
 
+void Dict::UpdateUser(User * tuser)
+{
+	tuser->updateFile();
+}
+
+void Dict::UpdateDatabase(Database * tdatabase)
+{
+	tdatabase->updateFile();
+}
+
+void Dict::UpdateClass(Class * tclass)
+{
+	tclass->updateFile();
+}
+
+void Dict::UpdateAttribute(Attribute * tattribute)
+{
+	tattribute->updateFile();
+}
+
+
+string Dict::getRowid(int oid)
+{
+	ifstream fin("./data/dict.roid",ios::in);			//打开保存rowid的文件
+	string line;
+	string res = "";
+	while (getline(fin, line)) {
+		if (line != "") {
+			Expr*expr =  Block::decodeExprArray(line);
+			if ((*(expr->exprList))[0]->ival == oid)
+				res = (*(expr->exprList))[1]->name;
+		}
+	}
+	return res;
+}
+
 
 
 /*-------------------------------------------------*/
@@ -666,6 +703,21 @@ void User::SetCode(string tcode) {
 	code = tcode;
 }
 
+void User::updateFile()
+{
+	//生成要放入的数据final
+	Expr* expr_userid = Expr::makeLiteral((int64_t)userid);		//		##此处有问题
+	Expr* expr_username = Expr::makeLiteral(username.data());
+	Expr* expr_code = Expr::makeLiteral(code.data());
+	vector<Expr*> exprlist;
+	exprlist.push_back(expr_userid);
+	exprlist.push_back(expr_username);
+	exprlist.push_back(expr_code);
+	Expr* final = Expr::makeArray(&exprlist);
+
+	BlockMgr::getInstance()->update(Dict::getRowid(GetUserid()).c_str(),final);
+}
+
 void User::StoreToFile() {
 	//Block* targetblock = BlockMgr::getInstance()->getBlock(fileid, userblock1);		//取得文件中第一个块
 
@@ -685,11 +737,19 @@ void User::StoreToFile() {
 	rowid = targetblock->generateRowID();						//得到rowid
 	targetblock->updateBuffer();
 
-	//ofstream fout("./data/user_rowid.roid", ios::out| ios::app);			//打开保存rowid的文件
-	//fout << rowid << "\n";										//将rowid写到文件中
-	//fout.close();
-	//fout.clear();
+	ofstream fout("./data/dict.roid", ios::out | ios::app);			//打开保存rowid的文件
+	vector<Expr*> exprs;
+	Expr* oidExpr = Expr::makeLiteral((int64_t)userid);
+	Expr*roidExpr = Expr::makeLiteral(rowid.c_str());
+	exprs.push_back(oidExpr);
+	exprs.push_back(roidExpr);
+	Expr* resExpr = Expr::makeArray(&exprs);
+	string resstr = Block::encodeExprArray(resExpr);
+	fout << resstr << endl;
+	fout.close();
+	fout.clear();
 }
+
 
 
 /*-------------------------------------------------*/
@@ -766,6 +826,34 @@ void Database::Addconnect() {
 	curconnect++;
 }
 
+
+void Database::updateFile()
+{
+	Expr* expr_oid = Expr::makeLiteral((int64_t)oid);
+	Expr* expr_datname = Expr::makeLiteral(datname.data());
+	Expr* expr_ownerid = Expr::makeLiteral((int64_t)ownerid);
+	Expr* expr_datconnlimit = Expr::makeLiteral((int64_t)datconnlimit);
+	Expr* expr_curconnect = Expr::makeLiteral((int64_t)curconnect);
+	vector<Expr*> acl;
+	vector<int>::iterator iter;
+	for (iter = datacl.begin(); iter != datacl.end(); iter++)
+	{
+		acl.push_back(Expr::makeLiteral((int64_t)(*iter)));
+	}
+	Expr* expr_datacl = Expr::makeArray(&acl);
+
+	//生成最终要放入的final
+	vector<Expr*> exprlist;
+	exprlist.push_back(expr_oid);
+	exprlist.push_back(expr_datname);
+	exprlist.push_back(expr_ownerid);
+	exprlist.push_back(expr_datconnlimit);
+	exprlist.push_back(expr_curconnect);
+	exprlist.push_back(expr_datacl);
+	Expr* final = Expr::makeArray(&exprlist);
+	BlockMgr::getInstance()->update(Dict::getRowid(GetOid()).c_str(),final);
+}
+
 void Database::StoreToFile() {
 	//生成各条要放入的数据
 	Expr* expr_oid = Expr::makeLiteral((int64_t)oid);
@@ -791,6 +879,7 @@ void Database::StoreToFile() {
 	exprlist.push_back(expr_datacl);
 	Expr* final = Expr::makeArray(&exprlist);
 
+
 	//放入块中
 	string rowid;
 	Block* targetblock = BlockMgr::getInstance()->getLastAvailableBlock(fileid);		//取得file的最后一个可用的块
@@ -799,10 +888,17 @@ void Database::StoreToFile() {
 	rowid = targetblock->generateRowID();						//得到rowid
 	targetblock->updateBuffer();
 
-	//ofstream fout("./data/database_rowid.roid", ios::out|ios::app);			//打开保存rowid的文件
-	//fout << rowid << "\n";										//将rowid写到文件中
-	//fout.close();
-	//fout.clear();
+	ofstream fout("./data/dict.roid", ios::out|ios::app);			//打开保存rowid的文件
+	vector<Expr*> exprs;
+	Expr* oidExpr = Expr::makeLiteral((int64_t)oid);
+	Expr*roidExpr = Expr::makeLiteral(rowid.c_str());
+	exprs.push_back(oidExpr);
+	exprs.push_back(roidExpr);
+	Expr* resExpr = Expr::makeArray(&exprs);
+	string resstr=Block::encodeExprArray(resExpr);
+	fout << resstr << endl;
+	fout.close();
+	fout.clear();
 }
 
 /*-------------------------------------------------*/
@@ -859,6 +955,35 @@ void Class::SetPkey(bool t) {
 		haspkey = 0;
 }
 
+void Class::updateFile()
+{
+	Expr* expr_oid = Expr::makeLiteral((int64_t)oid);
+	Expr* expr_databaseid = Expr::makeLiteral((int64_t)databaseid);
+	Expr* expr_relname = Expr::makeLiteral(relname.data());
+	Expr* expr_relfileid = Expr::makeLiteral(relfileid.data());
+	Expr* expr_relblockid = Expr::makeLiteral(relblockid.data());
+	Expr* expr_reltuples = Expr::makeLiteral((int64_t)reltuples);
+	Expr* expr_hasindex = Expr::makeLiteral((int64_t)hasindex);
+	Expr* expr_relkind = Expr::makeLiteral(&relkind);
+	Expr* expr_relnatts = Expr::makeLiteral((int64_t)relnatts);
+	Expr* expr_haspkey = Expr::makeLiteral((int64_t)haspkey);
+
+	//生成最终要放入的final
+	vector<Expr*> exprlist;
+	exprlist.push_back(expr_oid);
+	exprlist.push_back(expr_databaseid);
+	exprlist.push_back(expr_relname);
+	exprlist.push_back(expr_relfileid);
+	exprlist.push_back(expr_relblockid);
+	exprlist.push_back(expr_reltuples);
+	exprlist.push_back(expr_hasindex);
+	exprlist.push_back(expr_relkind);
+	exprlist.push_back(expr_relnatts);
+	exprlist.push_back(expr_haspkey);
+	Expr* final = Expr::makeArray(&exprlist);
+	BlockMgr::getInstance()->update(Dict::getRowid(oid).c_str(),final);
+}
+
 void Class::StoreToFile() {
 	//生成各条要放入的数据
 	Expr* expr_oid = Expr::makeLiteral((int64_t)oid);
@@ -893,10 +1018,17 @@ void Class::StoreToFile() {
 	rowid = targetblock->generateRowID();						//得到rowid
 	targetblock->updateBuffer();
 
-	//ofstream fout("./data/class_rowid.roid", ios::out| ios::app);			//打开保存rowid的文件
-	//fout << rowid << "\n";										//将rowid写到文件中
-	//fout.close();
-	//fout.clear();
+	ofstream fout("./data/dict.roid", ios::out | ios::app);			//打开保存rowid的文件
+	vector<Expr*> exprs;
+	Expr* oidExpr = Expr::makeLiteral((int64_t)oid);
+	Expr*roidExpr = Expr::makeLiteral(rowid.c_str());
+	exprs.push_back(oidExpr);
+	exprs.push_back(roidExpr);
+	Expr* resExpr = Expr::makeArray(&exprs);
+	string resstr = Block::encodeExprArray(resExpr);
+	fout << resstr << endl;
+	fout.close();
+	fout.clear();
 }
 
 
@@ -992,8 +1124,8 @@ void Attribute::CalculateColcard() {
 	//此处需要调用统计方法，统计该属性的不同元组个数
 }
 
-void Attribute::StoreToFile() {
-	//生成各条要放入的数据
+void Attribute::updateFile()
+{
 	Expr* expr_oid = Expr::makeLiteral((int64_t)oid);
 	Expr* expr_relid = Expr::makeLiteral((int64_t)relid);
 	Expr* expr_name = Expr::makeLiteral(name.data());
@@ -1017,6 +1149,36 @@ void Attribute::StoreToFile() {
 	exprlist.push_back(expr_colcard);
 	Expr* final = Expr::makeArray(&exprlist);
 
+	BlockMgr::getInstance()->update(Dict::getRowid(oid).c_str(), final);
+}
+
+void Attribute::StoreToFile() {
+	//生成各条要放入的数据
+	
+	Expr* expr_oid = Expr::makeLiteral((int64_t)oid);
+	Expr* expr_relid = Expr::makeLiteral((int64_t)relid);
+	Expr* expr_name = Expr::makeLiteral(name.data());
+	Expr* expr_type = Expr::makeLiteral((int64_t)type);
+	Expr* expr_attnum = Expr::makeLiteral((int64_t)attnum);
+	Expr* expr_varcharlen = Expr::makeLiteral((int64_t)varcharlen);
+	Expr* expr_notnull = Expr::makeLiteral((int64_t)notnull);
+	Expr* expr_pkey = Expr::makeLiteral((int64_t)pkey);
+	Expr* expr_colcard = Expr::makeLiteral((int64_t)colcard);
+
+	//生成最终要放入的final
+	vector<Expr*> exprlist;
+	exprlist.push_back(expr_oid);
+	exprlist.push_back(expr_relid);
+	exprlist.push_back(expr_name);
+	exprlist.push_back(expr_type);
+	exprlist.push_back(expr_attnum);
+	exprlist.push_back(expr_varcharlen);
+	exprlist.push_back(expr_notnull);
+	exprlist.push_back(expr_pkey);
+	exprlist.push_back(expr_colcard);
+	Expr* final = Expr::makeArray(&exprlist);
+
+
 	//放入块中
 	string rowid;
 	Block* targetblock = BlockMgr::getInstance()->getLastAvailableBlock(fileid);		//取得file的最后一个可用的块
@@ -1024,10 +1186,17 @@ void Attribute::StoreToFile() {
 	rowid = targetblock->generateRowID();						//得到rowid
 	targetblock->updateBuffer();
 
-	//ofstream fout("./data/attribute_rowid.roid", ios::out | ios::app);			//打开保存rowid的文件
-	//fout << rowid << "\n";										//将rowid写到文件中
-	//fout.close();
-	//fout.clear();
+	ofstream fout("./data/dict.roid", ios::out | ios::app);			//打开保存rowid的文件
+	vector<Expr*> exprs;
+	Expr* oidExpr = Expr::makeLiteral((int64_t)oid);
+	Expr*roidExpr = Expr::makeLiteral(rowid.c_str());
+	exprs.push_back(oidExpr);
+	exprs.push_back(roidExpr);
+	Expr* resExpr = Expr::makeArray(&exprs);
+	string resstr = Block::encodeExprArray(resExpr);
+	fout << resstr << endl;
+	fout.close();
+	fout.clear();
 }
 
 
@@ -1120,11 +1289,6 @@ void Index::StoreToFile() {
 	targetblock->put(final);									//将数据放入可以放入的块
 	rowid = targetblock->generateRowID();						//得到rowid
 	targetblock->updateBuffer();
-
-	//ofstream fout("./data/index_rowid.roid", ios::out | ios::app);			//打开保存rowid的文件
-	//fout << rowid << "\n";										//将rowid写到文件中
-	//fout.close();
-	//fout.clear();
 
 }
 

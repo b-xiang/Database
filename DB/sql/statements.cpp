@@ -147,6 +147,7 @@ namespace hsql {
 				dict->StoreAttribute(attr);
 				delete attr;
 			}
+
 			delete user;
 			delete db;
 			delete cls;
@@ -210,6 +211,7 @@ namespace hsql {
 						attr->SetPkey(true);
 						IdxMgr* mgr=IdxMgr::getInstance();
 						mgr->createIdx(attr->oid);
+						dict->UpdateAttribute(attr);
 					}
 				}
 			}

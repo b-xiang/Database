@@ -15,6 +15,7 @@
 #include<iostream>
 #include"sql\Expr.h"
 using namespace std;
+using namespace hsql;
 
 
 
@@ -77,6 +78,7 @@ public:
 	string GetCode();
 	void SetCode(string tcode);
 
+	void updateFile();
 	void StoreToFile();		//将该对象存入user表文件中
 };
 
@@ -125,6 +127,7 @@ public:
 	bool CanConnect();						//判断能否连接
 	void Addconnect();						//增加一个连接数
 
+	void updateFile();
 	void StoreToFile();		//将该对象存入database表文件中
 };
 
@@ -166,6 +169,7 @@ public:
 	bool HasPkey();						//是否定义主键
 	void SetPkey(bool t);						//设置主键
 
+	void updateFile();
 	void StoreToFile();		//将该对象存入class表文件中
 };
 
@@ -220,6 +224,8 @@ public:
 	int GetColcard();
 	void CalculateColcard();			//计算该属性有几个不同的元组
 
+
+	void updateFile();
 	void StoreToFile();					//将该对象存入Attribute表文件中
 };
 
@@ -340,8 +346,13 @@ public:
 	void StoreAttribute(Attribute* tattribute);		//将attribute存入attribute表中
 	void StoreIndex(Index* tindex);			//将index存入index表中
 
+	void UpdateUser(User* tuser);	
+	void UpdateDatabase(Database* tdatabase);	
+	void UpdateClass(Class* tclass);
+	void UpdateAttribute(Attribute* tattribute);
 
 	static void setCurSchema(string schema) { curSchema = schema; }
 	static string getCurSchema() { return curSchema; }
+	static string getRowid(int oid);
 };
 #endif // !DICT_H

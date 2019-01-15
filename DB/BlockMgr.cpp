@@ -21,6 +21,17 @@ BlockMgr::~BlockMgr()
 {
 }
 
+string BlockMgr::update(const char * rowid, Expr * newContent)
+{
+	string s(rowid);
+	string doi = s.substr(0, 6);
+	string fid = s.substr(6, 3);
+	string bid = s.substr(9, 6);
+	string rid = s.substr(15, 3);
+	Block *blk = getBlock(fid, bid);
+	return blk->update(rowid, newContent);
+}
+
 bool BlockMgr::isFileFull(string fileid)
 {
 	return getFile(fileid)->blockNum >= BLOCK_NUM;
