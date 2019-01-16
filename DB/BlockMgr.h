@@ -34,6 +34,7 @@ private:
 	BlockMgr& operator=(const BlockMgr&)=delete;
 public:
 	void update(const char* rowid, Expr* newContent);//更新元素
+	void multiRemove(vector<string> rowids);
 	bool isFileFull(string fileid);										//文件是否已经放满
 	bool isAbleToInput(string fileid,string blockid, Expr* content);	//一个块内是否还能放入Expr
 	bool isAbleToInput(Block* block, Expr* content);					

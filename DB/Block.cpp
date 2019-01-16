@@ -446,11 +446,11 @@ void Block::remove(int idx)
 		}
 	}
 	
-	bool isRecycleable=false;
+	bool isRecycleable=true;
 	dataType[idx] = kExprDeleted;
 	for (auto type : dataType) {
 		if (type != kExprDeleted) {
-			isRecycleable = true;
+			isRecycleable = false;
 			break;
 		}
 	}

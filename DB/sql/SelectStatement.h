@@ -55,12 +55,6 @@ namespace hsql {
 		SelectStatement* unionSelect;
 		std::vector<OrderDescription*>* order;
 		LimitDescription* limit;
-
-		std::vector<Expr*> select(std::vector<Expr*> ori, Expr* whereClause, std::vector<Attribute*> attrs);
-		std::vector<Expr*> project(std::vector<Expr*> ori, std::vector<Expr*> selectList, std::vector<Attribute*> attrs);
-		std::vector<Expr*> intersectExprs(std::vector<Expr*> left, std::vector<Expr*> right);
-		std::vector<Expr*> unionExprs(std::vector<Expr*> left, std::vector<Expr*> right);
-
 	};
 
 } // namespace hsql

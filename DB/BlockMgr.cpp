@@ -32,6 +32,33 @@ void BlockMgr::update(const char * rowid, Expr * newContent)
 	blk->update(rowid, newContent);
 }
 
+void BlockMgr::multiRemove(vector<string> rowids)
+{
+	string hisdoi, hisfid, hisbid, hisrid;
+	file* curfile;
+	Block* curblk = nullptr;
+	for (auto id : rowids) {
+		string s(id);
+		string doi = s.substr(0, 6);
+		string fid = s.substr(6, 3);
+		string bid = s.substr(9, 6);
+		string rid = s.substr(15, 3);
+		if (doi != hisdoi)
+			hisdoi = doi;
+		if (fid != hisfid) {
+			hisfid = fid;
+			curfile = getFile(fid);
+		}
+		if (bid != hisbid) {
+			hisbid = bid;
+			releaseBlk(curblk);
+			curblk = nullptr;
+			curblk = getBlock(curfile->fileid64, bid);
+		}
+		curblk->remove(id.c_str());
+	}
+}
+
 bool BlockMgr::isFileFull(string fileid)
 {
 	return getFile(fileid)->blockNum >= BLOCK_NUM;

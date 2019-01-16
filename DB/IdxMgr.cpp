@@ -45,6 +45,13 @@ void IdxMgr::addRecord(int attrOid, Expr * expr, string rid)
 	bpt->insert(key, rid);
 }
 
+void IdxMgr::removeRecord(int attrOid, hsql::Expr * expr)
+{
+	BPlusTree* bpt = getBPT(attrOid);
+	BPTKeyType key = generateKey(expr);
+	bpt->remove(key);
+}
+
 vector<BPTDataType> IdxMgr::getRowids(int attrOid, vector<Expr*> expr)
 {
 	vector<BPTDataType> res;

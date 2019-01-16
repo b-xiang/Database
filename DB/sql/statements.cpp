@@ -9,6 +9,13 @@ using namespace std;
 
 namespace hsql {
 
+
+	std::vector<Expr*> select(std::vector<Expr*> ori, Expr* whereClause, std::vector<Attribute*> attrs);
+	std::vector<Expr*> project(std::vector<Expr*> ori, std::vector<Expr*> selectList, std::vector<Attribute*> attrs);
+	std::vector<Expr*> intersectExprs(std::vector<Expr*> left, std::vector<Expr*> right);
+	std::vector<Expr*> unionExprs(std::vector<Expr*> left, std::vector<Expr*> right);
+
+
 	// ColumnDefinition
 	ColumnDefinition::ColumnDefinition(char* name, ColumnType type, bool nullable) :
 		name(name),
@@ -244,6 +251,80 @@ namespace hsql {
 
 	string DeleteStatement::execute(string username)
 	{
+		stringstream ss;
+		Dict* dict = Dict::getInstance();
+		User* user = dict->GetUser(username);
+		string _schema;
+		if (schema == nullptr)
+			if (Dict::getCurSchema() != "")
+				_schema = Dict::getCurSchema();
+			else {
+				delete user;
+				return "Error! No database selected\n";
+			}
+		else
+			_schema = schema;
+		Database* db = dict->GetDatabase(user, _schema);
+		Class* cls = dict->GetClass(db, tableName);
+		if (cls == nullptr) {
+			delete user;
+			delete db;
+			delete cls;
+			return "Error: Unknow table " + string(tableName) + "\n";
+		}
+		vector<Attribute*> attrs = dict->GetAttribute(cls);
+		vector<Expr*> exprs;
+		vector<bool> visit;
+
+		vector<string> rids;
+		vector<Expr*> records;
+		map<Expr*, string> recordRidMap;
+		vector<bool> haveIdx;
+		
+		for (int i = 0; i < attrs.size();i++) {
+			bool hasIdx = false;
+			if (attrs[i]->IsPkey()) {
+				hasIdx = true;
+				rids = IdxMgr::getInstance()->getRowids(attrs[i]->oid);
+				records = BlockMgr::getInstance()->multipleGet(rids);
+				for (int i = 0; i < rids.size(); i++) {
+					recordRidMap[records[i]] = rids[i];
+				}
+			}
+			haveIdx.push_back(hasIdx);
+		}
+		bool flag = false;
+		for (auto b : haveIdx) {
+			if (b == true) {
+				flag = true;
+			}
+		}
+		if (!flag) {
+			return "Error! No index";
+		}
+			
+		vector<Expr*>res = select(records, expr, attrs);
+		
+		for (int i = 0; i < attrs.size(); i++) {
+			if (attrs[i]->IsPkey()) {
+				for (auto r : res) {
+					IdxMgr::getInstance()->removeRecord(attrs[i]->oid,(*r->exprList)[i]);
+				}
+			}
+		}
+
+		vector<string> tobeDeleted;
+		for (auto r : res) {
+			tobeDeleted.push_back(recordRidMap[r]);
+		}
+		BlockMgr::getInstance()->multiRemove(tobeDeleted);
+
+		delete user;
+		delete db;
+		delete cls;
+		for (auto attr : attrs) {
+			delete attr;
+		}
 		return "";
 	}
 
@@ -701,7 +782,7 @@ namespace hsql {
 	}
 
 
-	std::vector<Expr*> SelectStatement::select(std::vector<Expr*> ori, Expr * whereClause, std::vector<Attribute*> attrs)
+	std::vector<Expr*> select(std::vector<Expr*> ori, Expr * whereClause, std::vector<Attribute*> attrs)
 	{
 		vector<Expr*> res;
 		if(whereClause==nullptr)
@@ -734,7 +815,7 @@ namespace hsql {
 		return res;
 	}
 
-	std::vector<Expr*> SelectStatement::project(std::vector<Expr*> ori, std::vector<Expr*> selectList, std::vector<Attribute*> attrs)
+	std::vector<Expr*> project(std::vector<Expr*> ori, std::vector<Expr*> selectList, std::vector<Attribute*> attrs)
 	{
 		vector<Expr*> res;
 		if (selectList.size() == 1 && selectList[0]->type == kExprStar)
@@ -764,7 +845,7 @@ namespace hsql {
 		return res;
 	}
 
-	std::vector<Expr*> SelectStatement::intersectExprs(std::vector<Expr*> left, std::vector<Expr*> right)
+	std::vector<Expr*> intersectExprs(std::vector<Expr*> left, std::vector<Expr*> right)
 	{
 		vector<Expr*> res;
 		for (int i = 0; i < left.size();i++) {
@@ -780,7 +861,7 @@ namespace hsql {
 		return res;
 	}
 
-	std::vector<Expr*> SelectStatement::unionExprs(std::vector<Expr*> left, std::vector<Expr*> right)
+	std::vector<Expr*> unionExprs(std::vector<Expr*> left, std::vector<Expr*> right)
 	{
 		vector<Expr*> res;
 		res.insert(res.end(), right.begin(), right.end());
