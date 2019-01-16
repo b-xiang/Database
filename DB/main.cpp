@@ -29,6 +29,7 @@ int main() {
 #include <iostream>
 #include <sstream>
 #include "SQLParser.h"
+#include "Timer.h"
 using namespace hsql;
 using namespace std;
 
@@ -45,6 +46,7 @@ int main() {
 		s = string(buff);
 		if (s == "q")
 			break;
+		Timer::start();
 		SQLParser::parse(s, &res);
 		if (!res.isValid()) {
 			cout << res.errorMsg() << endl;
@@ -52,6 +54,8 @@ int main() {
 		for (auto stm : res.getStatements()) {
 			ss << stm->execute();
 		}
+		Timer::end();
+		ss << Timer::outputInterval();
 		cout << ss.str();
 	}
 	return 0;

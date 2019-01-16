@@ -1,5 +1,6 @@
 #include "Timer.h"
 #include <iostream>
+#include <sstream>
 using namespace std;
 
 map<string, pair<clock_t, clock_t>> Timer::reg;
@@ -14,9 +15,11 @@ void Timer::end(string mission)
 	reg[mission].second = clock();
 }
 
-void Timer::outputInterval(string mission)
+string Timer::outputInterval(string mission)
 {
-	cout << reg[mission].second - reg[mission].first<<" ms";
+	stringstream ss;
+	ss <<"done. consumes " <<(reg[mission].second - reg[mission].first) << " ms" <<endl<< endl;
+	return ss.str();
 }
 
 clock_t Timer::getInterval(string mission)

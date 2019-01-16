@@ -228,6 +228,11 @@ vector<Expr*> Block::getFromFrontToX(const char * torowid)
 	return get(0, atoi(Conv64::to_10(rid).c_str()));
 }
 
+vector<Expr*> Block::getFromFrontToEnd()
+{
+	return get(0,recordnum-1);
+}
+
 string Block::generateRowID()
 {
 	stringstream ss;
@@ -419,6 +424,28 @@ Expr* Block::get(int idx)
 
 void Block::remove(int idx)
 {
+	if (dataType[idx] == kExprUpdated) {
+		char buff[BLOCK_SIZE];
+		memset(buff, 0, sizeof(buff));
+		int from = recordpos[idx];
+		if (buffer[from] == CUR_BLOCK) {
+			strcpy(buff, buffer + from + 1);
+			int newrid = atoi(Conv64::to_10(getBlockid()).c_str()) + atoi(Conv64::to_10(buff).c_str());
+			remove(newrid);
+		}
+		else if (buffer[from] == OTHER_BLOCK) {
+			from++;
+			strcpy(buff, buffer + from);
+			from += strlen(buff) + 1;
+			int blkid = atoi(Conv64::to_10(getBlockid()).c_str()) + atoi(Conv64::to_10(buff).c_str());
+			strcpy(buff, buffer + from);
+			from += strlen(buff) + 1;
+			int newrid = atoi(Conv64::to_10(buff).c_str());
+			Block* newblk = BlockMgr::getInstance()->getBlock(getFileid(), Conv64::to_64(blkid, 6));
+			newblk->remove(newrid);
+		}
+	}
+	
 	bool isRecycleable=false;
 	dataType[idx] = kExprDeleted;
 	for (auto type : dataType) {

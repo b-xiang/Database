@@ -65,6 +65,7 @@ public:
 	vector<Expr*> get(const char* fromrowid, const char* torowid);	//范围提取多个Expr
 	vector<Expr*> getFromXToEnd(const char* fromrowid);				//获取从某个位置起到块尾的值
 	vector<Expr*> getFromFrontToX(const char* torowid);				//获取从开始到某个位置的值
+	vector<Expr*> getFromFrontToEnd();				//获取从开始到结束的值
 	string generateRowID();			//传入一个Expr，产生该行的rowid
 	bool writeToFile();				//将该块写到文件，要求必须有文件号和文件内块号
 	bool readFromFile();			//从文件读取该块，要求必须有文件号和文件内块号

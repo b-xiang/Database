@@ -258,4 +258,81 @@ namespace hsql {
 		copy[len] = '\0';
 		return copy;
 	}
+	bool Expr::compare(Expr * val1, Expr * val2, OperatorType op)
+	{
+		if (val1->type != val2->type) {
+			if ((val1->type == kExprLiteralInt || val1->type == kExprLiteralFloat) && (val2->type == kExprLiteralInt || val2->type == kExprLiteralFloat)) {
+				double ex1= val1->type == kExprLiteralInt ? val1->ival : val1->fval;
+				double ex2= val2->type == kExprLiteralInt ? val2->ival : val2->fval;
+				if (op == kOpEquals) {
+					return fabs(ex1 - ex2) < 1e-3;
+				}
+				else if (op == kOpGreater) {
+					return ex1 > ex2;
+				}
+				else if (op == kOpGreaterEq) {
+					return ex1 >= ex2;
+				}
+				else if (op == kOpLess) {
+					return ex1 < ex2;
+				}
+				else if (op == kOpLessEq) {
+					return ex1 <= ex2;
+				}
+			}
+			else {
+				return false;
+			}
+		}
+		else {
+			if (val1->type == kExprLiteralInt) {
+				if (op == kOpEquals) {
+					return val1->ival == val2->ival;
+				}
+				else if (op == kOpGreater) {
+					return val1->ival > val2->ival;
+				}
+				else if (op == kOpGreaterEq) {
+					return val1->ival >= val2->ival;
+				}
+				else if (op == kOpLess) {
+					return val1->ival < val2->ival;
+				}
+				else if (op == kOpLessEq) {
+					return val1->ival <= val2->ival;
+				}
+			}
+			else if (val1->type == kExprLiteralFloat) {
+				if (op == kOpEquals) {
+					return val1->fval == val2->fval;
+				}
+				else if (op == kOpGreater) {
+					return val1->fval > val2->fval;
+				}
+				else if (op == kOpGreaterEq) {
+					return val1->fval >= val2->fval;
+				}
+				else if (op == kOpLess) {
+					return val1->fval < val2->fval;
+				}
+				else if (op == kOpLessEq) {
+					return val1->fval <= val2->fval;
+				}
+			}
+			else if (val1->type == kExprLiteralNull) {
+				if (op == kOpEquals || op == kOpGreaterEq || op == kOpLessEq) {
+					return true;
+				}
+				else
+					return false;
+			}
+			else if (val1->type == kExprLiteralString) {
+				if (op == kOpEquals)
+					return strcmp(val1->name,val2->name)==0;
+				else
+					return false;
+			}
+		}
+		return false;
+	}
 }  // namespace hsql

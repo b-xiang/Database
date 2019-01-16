@@ -160,6 +160,7 @@ void ServerSocket::release()
 
 void ServerSocket::getAndUse(string username)
 {
+	Timer::start(username);
 	stringstream ss;
 	SQLParserResult res;
 	SQLParser::parse(string(recv_buf), &res);
@@ -172,5 +173,7 @@ void ServerSocket::getAndUse(string username)
 	for (auto stm : res.getStatements()) {
 		ss << stm->execute(username) << endl;
 	}
+	Timer::end(username);
+	ss << Timer::outputInterval(username);
 	put_in_buf(ss.str().c_str());
 }

@@ -244,7 +244,7 @@ namespace hsql {
 
 	string DeleteStatement::execute(string username)
 	{
-		return false;
+		return "";
 	}
 
 	// DropStatament
@@ -361,6 +361,7 @@ namespace hsql {
 
 	string InsertStatement::execute(string username)
 	{
+		
 		Dict* dict = Dict::getInstance();
 		switch (type)
 		{
@@ -382,50 +383,69 @@ namespace hsql {
 				delete user;
 				delete db;
 				delete cls;
-				return "Error: Unknow table " + string(tableName) + "\n";
+				return "Error: Unknown table " + string(tableName) + "\n";
 			}
 			vector<Attribute*> attrs = dict->GetAttribute(cls);
 			vector<Expr*> exprs;
 			vector<bool> visit;
-			for (auto attr : attrs) {
-				bool found = false;
-				for(int i=0;i<(*columns).size();i++){
-					if (strcmp(attr->name.c_str(),(*columns)[i])==0) {
-						if(attr->type== (*values)[i]->type)
-							exprs.push_back((*values)[i]);
-						else {
+			if (columns != nullptr) {
+				for (auto attr : attrs) {
+					bool found = false;
+					for (int i = 0; i < (*columns).size(); i++) {
+						if (strcmp(attr->name.c_str(), (*columns)[i]) == 0) {
+							if (attr->type == (*values)[i]->type) {
+								if (attr->type == kExprLiteralString)
+									exprs.push_back(Expr::makeLiteral(string((*values)[i]->name).substr(0, attr->varcharlen).c_str()));
+								else
+									exprs.push_back((*values)[i]);
+							}
+							else {
+								delete user, db, cls;
+								for (auto attr : attrs) {
+									delete attr;
+								}
+								return "Error: Unexpected data type\n";
+							}
+							found = true;
+						}
+					}
+					visit.push_back(found);
+					if (!found) {//¼ì²â·Ç¿Õ
+						if (attr->IsNotNull()) {
 							delete user, db, cls;
 							for (auto attr : attrs) {
 								delete attr;
 							}
-							for (auto expr : exprs) {
-								delete expr;
-							}
-							return "Error: Unexpected data type\n";
+							return "Error: Attribute " + attr->name + " can not be null\n";
 						}
-						found = true;
+						else {
+							exprs.push_back(Expr::makeNullLiteral());
+						}
 					}
 				}
-				visit.push_back(found);
-				if (!found) {//¼ì²â·Ç¿Õ
-					if (attr->IsNotNull()) {
+			}
+			else {
+				for (int i = 0; i < attrs.size();i++) {
+					visit.push_back(true);
+					if (attrs[i]->type == (*values)[i]->type) {
+						if (attrs[i]->type == kExprLiteralString)
+							exprs.push_back(Expr::makeLiteral(string((*values)[i]->name).substr(0, attrs[i]->varcharlen).c_str()));
+						else
+							exprs.push_back((*values)[i]);
+					}
+					else if (attrs[i]->type==kExprLiteralFloat&& (*values)[i]->type==kExprLiteralInt) {
+						exprs.push_back(Expr::makeLiteral((double)(*values)[i]->ival));
+					}
+					else {
 						delete user, db, cls;
 						for (auto attr : attrs) {
 							delete attr;
 						}
-						for (auto expr : exprs) {
-							delete expr;
-						}
-						return "Error: Attribute "+attr->name+" can not be null\n";
-					}
-					else {
-						exprs.push_back(Expr::makeNullLiteral());
-					}
-				}
-				if (found) {
-
+						return "Error: Unexpected data type\n";
+					}	
 				}
 			}
+			
 			Expr* final = Expr::makeArray(&exprs);
 			Block* blk=BlockMgr::getInstance()->getLastAvailableBlock(cls->relfileid);
 			string rid=blk->put(final);
@@ -621,25 +641,39 @@ namespace hsql {
 		vector<Attribute*> attrs = dict->GetAttribute(cls);
 		vector<Expr*> exprs;
 		vector<bool> visit;
-		if (selectList->size() == 1 && (*selectList)[0]->type == kExprStar) {
-			for (auto attr : attrs) {
-				if (attr->IsPkey()) {
-					auto rids=IdxMgr::getInstance()->getRowids(attr->oid);
-					auto r = BlockMgr::getInstance()->multipleGet(rids);
-					res.insert(res.begin(),r.begin(),r.end());
-					break;
-				}
+		
+		bool hasIdx=false;
+		for (auto attr : attrs) {
+			if (attr->IsPkey()) {
+				hasIdx = true;
+				auto rids=IdxMgr::getInstance()->getRowids(attr->oid);
+				auto r = BlockMgr::getInstance()->multipleGet(rids);
+				res.insert(res.begin(),r.begin(),r.end());
+				break;
 			}
 		}
-		else {
-
+		if (!hasIdx) {
+			Block*curblk = BlockMgr::getInstance()->getBlock(cls->relfileid, cls->relblockid);
+			do {
+				auto r=curblk->getFromFrontToEnd();
+				res.insert(res.begin(), r.begin(), r.end());
+				curblk = BlockMgr::getInstance()->getBlock(cls->relfileid, curblk->GetNextblockid());
+			} while (curblk->GetNextblockid() == "");
 		}
-
+		
+		res=select(res, whereClause,attrs);
+		res=project(res,*selectList,attrs);
 
 		//display
 		if ((*selectList)[0]->type == kExprStar) {
 			for (auto attr : attrs) {
 				ss << attr->name << "\t";
+			}
+			ss << endl;
+		}
+		else {
+			for (auto item : (*selectList)) {
+				ss << item->name << "\t";
 			}
 			ss << endl;
 		}
@@ -665,6 +699,105 @@ namespace hsql {
 		}
 		return ss.str();
 	}
+
+
+	std::vector<Expr*> SelectStatement::select(std::vector<Expr*> ori, Expr * whereClause, std::vector<Attribute*> attrs)
+	{
+		vector<Expr*> res;
+		if(whereClause==nullptr)
+			return ori;
+		else {
+			if (whereClause->opType == kOpAnd) {
+				return intersectExprs(select(ori, whereClause->expr, attrs), select(ori, whereClause->expr,attrs));
+			}
+			else if (whereClause->opType == kOpOr) {
+				return unionExprs(select(ori, whereClause->expr, attrs), select(ori, whereClause->expr2,attrs));
+			}
+			else {
+				Expr* tableref=whereClause->expr;
+				int idx = -1;
+				for (int i = 0; i < attrs.size(); i++) {
+					if (tableref->name == attrs[i]->name) {
+						idx = i;
+					}
+				}
+				if (idx == -1) {
+					return res;
+				}
+				for (auto item : ori) {
+					if (Expr::compare((*item->exprList)[idx], whereClause->expr2, whereClause->opType)){
+						res.push_back(item);
+					}
+				}
+			}
+		}
+		return res;
+	}
+
+	std::vector<Expr*> SelectStatement::project(std::vector<Expr*> ori, std::vector<Expr*> selectList, std::vector<Attribute*> attrs)
+	{
+		vector<Expr*> res;
+		if (selectList.size() == 1 && selectList[0]->type == kExprStar)
+			return ori;
+		else {
+			vector<bool> show;
+			for (auto item : attrs) {
+				bool found = false;
+				for (auto s : selectList) {
+					if (s->name == item->name)
+					{
+						found = true;
+						break;
+					}
+				}
+				show.push_back(found);
+			}
+			for (auto item : ori) {
+				vector<Expr*>* tmp=new vector<Expr*>;
+				for (int i = 0; i < show.size(); i++) {
+					if (show[i])
+						tmp->push_back((*item->exprList)[i]);
+				}
+				res.push_back(Expr::makeArray(tmp));
+			}
+		}
+		return res;
+	}
+
+	std::vector<Expr*> SelectStatement::intersectExprs(std::vector<Expr*> left, std::vector<Expr*> right)
+	{
+		vector<Expr*> res;
+		for (int i = 0; i < left.size();i++) {
+			bool found = false;
+			for (int j = 0; j < right.size(); j++) {
+				if (left[i]==right[j])
+					found = true;
+			}
+			if (found) {
+				res.push_back(left[i]);
+			}
+		}
+		return res;
+	}
+
+	std::vector<Expr*> SelectStatement::unionExprs(std::vector<Expr*> left, std::vector<Expr*> right)
+	{
+		vector<Expr*> res;
+		res.insert(res.end(), right.begin(), right.end());
+		for (int i = 0; i < left.size(); i++) {
+			bool found = false;
+			for (int j = 0; j < right.size(); j++) {
+				if (left[i] == right[j])
+					found = true;
+			}
+			if (!found) {
+				res.push_back(left[i]);
+			}
+		}
+		return res;
+	}
+
+
 
 	// UpdateStatement
 	UpdateStatement::UpdateStatement() :

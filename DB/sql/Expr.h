@@ -141,7 +141,11 @@ namespace hsql {
 		static Expr* makeInOperator(Expr* expr, std::vector<Expr*>* exprList);
 		static Expr* makeInOperator(Expr* expr, SelectStatement* select);
 		static Expr* makeExtract(DatetimeField datetimeField1, Expr* expr);
+		static bool compare(Expr* val1, Expr*val2, OperatorType);
 	};
+
+	
+
 
 	// Zero initializes an Expr object and assigns it to a space in the heap
 	// For Hyrise we still had to put in the explicit NULL constructor
