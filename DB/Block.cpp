@@ -128,6 +128,7 @@ void Block::update(const char * rowid, Expr * newContent)
 		updateAtCurPos = recordpos[r - 1] - recordpos[r] >= newlen;
 	if (updateAtCurPos) {
 		put(newContent, recordpos[r]);
+		return;
 	}
 	
 	//在当前块进行update

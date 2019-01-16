@@ -788,7 +788,10 @@ namespace hsql {
 		if(whereClause==nullptr)
 			return ori;
 		else {
-			if (whereClause->opType == kOpAnd) {
+			if (whereClause->isBoolLiteral&& whereClause->ival == 1) {
+				return ori;
+			}
+			else if (whereClause->opType == kOpAnd) {
 				return intersectExprs(select(ori, whereClause->expr, attrs), select(ori, whereClause->expr,attrs));
 			}
 			else if (whereClause->opType == kOpOr) {
@@ -903,6 +906,145 @@ namespace hsql {
 
 	string UpdateStatement::execute(string username)
 	{
+		stringstream ss;
+		Dict* dict = Dict::getInstance();
+		User* user = dict->GetUser(username);
+		string _schema;
+		if (table->schema == nullptr)
+			if (Dict::getCurSchema() != "")
+				_schema = Dict::getCurSchema();
+			else {
+				delete user;
+				return "Error! No database selected\n";
+			}
+		else
+			_schema = table->schema;
+		Database* db = dict->GetDatabase(user, _schema);
+		Class* cls = dict->GetClass(db, table->name);
+		if (cls == nullptr) {
+			delete user;
+			delete db;
+			delete cls;
+			return "Error: Unknow table " + string(table->name) + "\n";
+		}
+		vector<Attribute*> attrs = dict->GetAttribute(cls);
+		vector<Expr*> exprs;
+		vector<bool> visit;
+
+		vector<string> rids;
+		vector<Expr*> records;
+		map<Expr*, string> recordRidMap;
+		vector<bool> haveIdx;
+
+		for (int i = 0; i < attrs.size(); i++) {
+			bool hasIdx = false;
+			if (attrs[i]->IsPkey()) {
+				hasIdx = true;
+				rids = IdxMgr::getInstance()->getRowids(attrs[i]->oid);
+				records = BlockMgr::getInstance()->multipleGet(rids);
+				for (int i = 0; i < rids.size(); i++) {
+					recordRidMap[records[i]] = rids[i];
+				}
+			}
+			haveIdx.push_back(hasIdx);
+		}
+		bool flag = false;
+		for (auto b : haveIdx) {
+			if (b == true) {
+				flag = true;
+			}
+		}
+		if (!flag) {
+			return "Error! No index";
+		}
+
+		vector<Expr*>res = select(records, where, attrs);
+		vector<Expr*>tmp;
+		vector<string> tobeUpdated;
+		for (auto r : res) {
+			tobeUpdated.push_back(recordRidMap[r]);
+		}
+		for (auto item : *updates) {
+			if (item->value->type != kExprColumnRef) {
+				int idx=-1;
+				for (int i = 0; i < attrs.size();i++) {
+					if (attrs[i]->name == item->column) {
+						idx = i;
+						break;
+					}
+				}
+				if (idx == -1) {
+					delete user;
+					delete db;
+					delete cls;
+					for (auto attr : attrs) {
+						delete attr;
+					}
+					return "Error! No attribute named" + string(item->column);
+				}
+				else {
+					for (auto i : res) {
+						vector<Expr*>* s=new vector<Expr*>;
+						for (int j = 0; j < (*i->exprList).size();j++) {
+							if (j != idx) {
+								s->push_back((*i->exprList)[j]);
+							}
+							else {
+								s->push_back(item->value);
+							}
+						}
+						tmp.push_back(Expr::makeArray(s));
+					}
+				}
+			}
+			else {
+				int idx1 = -1;
+				for (int i = 0; i < attrs.size(); i++) {
+					if (attrs[i]->name == item->column) {
+						idx1 = i;
+						break;
+					}
+				}
+				int idx2 = -1;
+				for (int i = 0; i < attrs.size(); i++) {
+					if (attrs[i]->name == item->value->name) {
+						idx2 = i;
+						break;
+					}
+				}
+				if (idx1 == -1||idx2==-1) {
+					delete user;
+					delete db;
+					delete cls;
+					for (auto attr : attrs) {
+						delete attr;
+					}
+					return "Error! No attribute named" + string(item->column);
+				}
+				else {
+					for (auto i : res) {
+						vector<Expr*>* s = new vector<Expr*>;
+						for (int j = 0; j < (*i->exprList).size(); j++) {
+							if (j != idx1) {
+								s->push_back((*i->exprList)[j]);
+							}
+							else {
+								s->push_back((*i->exprList)[idx2]);
+							}
+						}
+						tmp.push_back(Expr::makeArray(s));
+					}
+				}
+			}
+		}
+		BlockMgr::getInstance()->multipleUpdate(tobeUpdated,tmp);
+
+		delete user;
+		delete db;
+		delete cls;
+		for (auto attr : attrs) {
+			delete attr;
+		}
 		return "";
 	}
 

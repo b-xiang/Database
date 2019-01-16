@@ -197,6 +197,18 @@ vector<Expr*> BlockMgr::multipleGet(vector<string> rowids)
 	return res;
 }
 
+void BlockMgr::multipleUpdate(vector<string> rowids, vector<Expr*> records)
+{
+	if (rowids.size() != records.size()) {
+		return;
+	}
+	else {
+		for (int i = 0; i < rowids.size(); i++) {
+			update(rowids[i].c_str(), records[i]);
+		}
+	}
+}
+
 file* BlockMgr::getLastAvailableFile()
 {
 	if (files.size() == 0)
