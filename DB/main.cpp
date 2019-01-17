@@ -1,7 +1,7 @@
 #include "DB.h"
 //#define DEBUG
-#define STAND_ALONE
-//#define RELEASE
+//#define STAND_ALONE
+#define RELEASE
 
 
 #ifdef DEBUG
@@ -63,8 +63,9 @@ int main() {
 #endif // STAND_ALONE
 
 #ifdef RELEASE
+#include <Windows.h>
 int main() {
-
+	system("clear.bat");
 	DB * db = DB::getInstance();
 
 	db->init();

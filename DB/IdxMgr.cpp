@@ -69,6 +69,12 @@ vector<BPTDataType> IdxMgr::getRowids(int attrOid)
 	return bpt->getAllValues();
 }
 
+vector<BPTDataType> IdxMgr::getRowids(int attrOid, hsql::Expr * expr, COMPARE_OPERATOR cmp)
+{
+	BPlusTree* bpt = getBPT(attrOid);
+	return bpt->select(generateKey(expr), cmp);
+}
+
 BPlusTree * IdxMgr::getBPT(int attrOid)
 {
 	return idx[attrOid];

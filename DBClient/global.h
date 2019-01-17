@@ -9,7 +9,7 @@ public:
 	// 全局设置
 	static char ip[];  // 服务器IP地址
 	static const int port = 5055;
-	static const int recv_buf_size = 1000;
+	static const int recv_buf_size = 10000;
 };
 
 //char Global::ip = "10.151.135.59";

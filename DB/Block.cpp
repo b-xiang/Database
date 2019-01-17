@@ -11,7 +11,7 @@
 #include "Base64.h"
 
 #define CUR_BLOCK (~(unsigned char)0)
-#define OTHER_BLOCK  (~(unsigned char)0<<1)
+#define OTHER_BLOCK (~(unsigned char)0<<1)
 
 using namespace std;
 
@@ -718,7 +718,7 @@ Expr * Block::getArrayStrategy::get(Block * blk, int idx)
 
 Expr * Block::getDeletedStrategy::get(Block * blk, int idx)
 {
-	return Expr::makeNullLiteral();
+	return nullptr;
 }
 
 Expr * Block::getUpdatedStrategy::get(Block * blk, int idx)
@@ -746,5 +746,5 @@ Expr * Block::getUpdatedStrategy::get(Block * blk, int idx)
 
 Expr * Block::getNullStrategy::get(Block * blk, int idx)
 {
-	return Expr::makeNullLiteral();
+	return nullptr;
 }

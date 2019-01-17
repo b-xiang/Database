@@ -35,7 +35,7 @@ void BlockMgr::update(const char * rowid, Expr * newContent)
 void BlockMgr::multiRemove(vector<string> rowids)
 {
 	string hisdoi, hisfid, hisbid, hisrid;
-	file* curfile;
+	file* curfile=nullptr;
 	Block* curblk = nullptr;
 	for (auto id : rowids) {
 		string s(id);
@@ -172,7 +172,7 @@ vector<Expr*> BlockMgr::multipleGet(vector<string> rowids)
 {
 	vector<Expr*> res;
 	string hisdoi, hisfid, hisbid, hisrid;
-	file* curfile;
+	file* curfile=nullptr;
 	Block* curblk = nullptr;
 	for (auto id : rowids) {
 		string s(id);
@@ -192,7 +192,10 @@ vector<Expr*> BlockMgr::multipleGet(vector<string> rowids)
 			curblk = nullptr;
 			curblk = getBlock(curfile->fileid64, bid);
 		}
-		res.push_back(curblk->get(id.c_str()));
+		Expr* r=curblk->get(id.c_str());
+		if (r != nullptr) {
+			res.push_back(r);
+		}
 	}
 	return res;
 }

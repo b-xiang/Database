@@ -3,6 +3,7 @@
 #include "../BlockMgr.h"
 #include "../IdxMgr.h"
 #include "../Block.h"
+#include "../Logger.h"
 #include <iostream>
 #include <sstream>
 using namespace std;
@@ -154,7 +155,7 @@ namespace hsql {
 				dict->StoreAttribute(attr);
 				delete attr;
 			}
-
+			Logger::getLogger()->logToFile("Create table " + string(schema));
 			delete user;
 			delete db;
 			delete cls;
@@ -178,6 +179,8 @@ namespace hsql {
 			db->SetDatName(schema);
 			db->SetOid(dict->DeliverOid());
 			dict->StoreDatabase(db);
+
+			Logger::getLogger()->logToFile("Create schema " + string(schema));
 			delete user;
 			delete db;
 			break;
@@ -228,11 +231,13 @@ namespace hsql {
 			for (auto attr : attrs) {
 				delete attr;
 			}
+			//Logger::getLogger()->logToFile("Create index on " + string(schema)+"."+ string(tableName));
 			break;
 		}
 		default:
 			break;
 		}
+
 		return "";
 	}
 
@@ -325,6 +330,7 @@ namespace hsql {
 		for (auto attr : attrs) {
 			delete attr;
 		}
+		Logger::getLogger()->logToFile("Delete from " + string(_schema) + "." + string(tableName));
 		return "";
 	}
 
@@ -550,6 +556,7 @@ namespace hsql {
 		default:
 			break;
 		}
+		//Logger::getLogger()->logToFile("Insert into " + string(schema) + "." + string(tableName));
 		return "";
 	}
 
@@ -727,7 +734,24 @@ namespace hsql {
 		for (auto attr : attrs) {
 			if (attr->IsPkey()) {
 				hasIdx = true;
-				auto rids=IdxMgr::getInstance()->getRowids(attr->oid);
+				vector<string> rids;
+				if (whereClause!=nullptr&&whereClause->expr->name == attr->name) {
+					COMPARE_OPERATOR cp;
+					if (whereClause->opType == kOpEquals)
+						cp = EQ;
+					else if (whereClause->opType == kOpGreater)
+						cp = BT;
+					else if (whereClause->opType == kOpGreaterEq)
+						cp = BE;
+					else if (whereClause->opType == kOpLess)
+						cp = LT;
+					else if (whereClause->opType == kOpLessEq)
+						cp = LE;
+					rids = IdxMgr::getInstance()->getRowids(attr->oid,whereClause->expr2,cp);
+				}
+				else {
+					rids = IdxMgr::getInstance()->getRowids(attr->oid);
+				}
 				auto r = BlockMgr::getInstance()->multipleGet(rids);
 				res.insert(res.begin(),r.begin(),r.end());
 				break;
@@ -746,6 +770,7 @@ namespace hsql {
 		res=project(res,*selectList,attrs);
 
 		//display
+
 		if ((*selectList)[0]->type == kExprStar) {
 			for (auto attr : attrs) {
 				ss << attr->name << "\t";
@@ -940,7 +965,23 @@ namespace hsql {
 			bool hasIdx = false;
 			if (attrs[i]->IsPkey()) {
 				hasIdx = true;
-				rids = IdxMgr::getInstance()->getRowids(attrs[i]->oid);
+				if (where != nullptr&& where->type!=kExprLiteralInt&&where->expr->name == attrs[i]->name) {
+					COMPARE_OPERATOR cp;
+					if (where->opType == kOpEquals)
+						cp = EQ;
+					else if (where->opType == kOpGreater)
+						cp = BT;
+					else if (where->opType == kOpGreaterEq)
+						cp = BE;
+					else if (where->opType == kOpLess)
+						cp = LT;
+					else if (where->opType == kOpLessEq)
+						cp = LE;
+					rids = IdxMgr::getInstance()->getRowids(attrs[i]->oid, where->expr2, cp);
+				}
+				else {
+					rids = IdxMgr::getInstance()->getRowids(attrs[i]->oid);
+				}
 				records = BlockMgr::getInstance()->multipleGet(rids);
 				for (int i = 0; i < rids.size(); i++) {
 					recordRidMap[records[i]] = rids[i];
@@ -1039,12 +1080,14 @@ namespace hsql {
 		}
 		BlockMgr::getInstance()->multipleUpdate(tobeUpdated,tmp);
 
+		Logger::getLogger()->logToFile("Update " + string(_schema) + "." + string(table->name));
 		delete user;
 		delete db;
 		delete cls;
 		for (auto attr : attrs) {
 			delete attr;
 		}
+		
 		return "";
 	}
 
@@ -1137,6 +1180,7 @@ namespace hsql {
 		auto db = dict->GetDatabase(user, schema);
 		if (db != nullptr) {
 			Dict::setCurSchema(schema);
+			Logger::getLogger()->logToFile("Change default database to " + string(schema));
 			delete user;
 			delete db;
 			return "Database changed\n";

@@ -28,6 +28,7 @@ public:
 	void removeRecord(int attrOid, hsql::Expr* expr);
 	vector<BPTDataType> getRowids(int attrOid, vector< hsql::Expr*> expr);
 	vector<BPTDataType> getRowids(int attrOid);
+	vector<BPTDataType> getRowids(int attrOid, hsql::Expr* expr, COMPARE_OPERATOR cmp);
 private:
 	BPlusTree* getBPT(int attrOid);
 	BPTKeyType generateKey(hsql::Expr* expr);

@@ -2,11 +2,11 @@
 #define BPLUS_TREE_H
 
 #include "BPlus_node.h"
+#include "global.h"
 #include <vector>
 using namespace std;
 
-enum COMPARE_OPERATOR { LT, LE, EQ, BE, BT, BETWEEN }; // ±È½Ï²Ù×÷·û£º<¡¢<=¡¢=¡¢>=¡¢>¡¢<>
-const int INVALID_INDEX = -1;
+
 
 struct SelectResult
 {

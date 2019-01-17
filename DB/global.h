@@ -49,4 +49,7 @@ struct F
 	SOCKET sockConn;
 };
 
+enum COMPARE_OPERATOR { LT, LE, EQ, BE, BT, BETWEEN }; // ±È½Ï²Ù×÷·û£º<¡¢<=¡¢=¡¢>=¡¢>¡¢<>
+const int INVALID_INDEX = -1;
+
 #endif // !GLOBAL_H

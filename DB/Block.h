@@ -164,7 +164,7 @@ private:
 		return str;
 	}
 	static getStrategy* getGetStrategy(ExprType type) {
-		getStrategy* str;
+		getStrategy* str=nullptr;
 		if (type == kExprLiteralInt)
 			str = new getIntStrategy;
 		else if (type == kExprLiteralFloat)

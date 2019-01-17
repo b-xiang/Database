@@ -9,8 +9,6 @@ char Global::ip[] = "127.0.0.1";
 
 int main()
 {
-	//select id,name, height from player where money>100 and gender='male';
-	//SELECT id,name,money from table1,table2 where table1.height>160;
 	MySocket* m = new MySocket;
 	m->run();
 	// exit ÍË³ö

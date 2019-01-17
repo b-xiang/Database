@@ -1,0 +1,105 @@
+2019-01-16 22:44:24 Create schema db
+2019-01-16 22:44:28 Create schema test
+2019-01-16 23:41:52 Create schema db
+2019-01-16 23:41:52 Create schema test
+2019-01-16 23:42:02 Create table db
+2019-01-16 23:42:08 Create table db
+2019-01-16 23:42:18 Create table db
+2019-01-16 23:42:21 Create table db
+2019-01-16 23:42:21 Create table db
+2019-01-16 23:42:22 Create table db
+2019-01-16 23:42:22 Create table db
+2019-01-16 23:42:23 Create table db
+2019-01-16 23:42:23 Create table db
+2019-01-16 23:42:27 Create table db
+2019-01-16 23:42:27 Create table db
+2019-01-16 23:42:27 Create table db
+2019-01-16 23:42:27 Create table db
+2019-01-16 23:42:27 Create table db
+2019-01-16 23:42:27 Create table db
+2019-01-16 23:42:27 Create table db
+2019-01-16 23:42:27 Create table db
+2019-01-16 23:42:27 Create table db
+2019-01-16 23:42:27 Create table db
+2019-01-16 23:42:27 Create table db
+2019-01-16 23:42:27 Create table db
+2019-01-16 23:42:27 Create table db
+2019-01-16 23:42:28 Create table db
+2019-01-16 23:42:28 Create table db
+2019-01-16 23:42:28 Create table db
+2019-01-16 23:42:28 Create table db
+2019-01-16 23:42:28 Create table db
+2019-01-16 23:42:28 Create table db
+2019-01-16 23:42:28 Create table db
+2019-01-16 23:42:28 Create table db
+2019-01-16 23:42:28 Create table db
+2019-01-16 23:44:22 Create schema db
+2019-01-16 23:44:22 Create schema test
+2019-01-16 23:44:22 Create table db
+2019-01-16 23:44:22 Change default database to db
+2019-01-16 23:45:23 Create schema db
+2019-01-16 23:45:23 Create schema test
+2019-01-16 23:45:23 Create table db
+2019-01-16 23:45:23 Change default database to db
+2019-01-16 23:47:07 Create schema db
+2019-01-16 23:47:07 Create schema test
+2019-01-16 23:47:07 Create table db
+2019-01-16 23:47:07 Change default database to db
+2019-01-16 23:47:39 Create schema db
+2019-01-16 23:47:39 Create schema test
+2019-01-16 23:47:39 Create table db
+2019-01-16 23:47:39 Change default database to db
+2019-01-16 23:47:44 Delete from db.students
+2019-01-16 23:47:46 Update db.students
+2019-01-16 23:47:47 Update db.students
+2019-01-17 00:06:42 Create schema db
+2019-01-17 00:06:42 Create schema test
+2019-01-17 00:06:42 Create table db
+2019-01-17 00:06:42 Change default database to db
+2019-01-17 00:08:42 Create schema db
+2019-01-17 00:08:42 Create schema test
+2019-01-17 00:08:42 Create table db
+2019-01-17 00:08:42 Change default database to db
+2019-01-17 00:10:10 Create schema db
+2019-01-17 00:10:10 Create schema test
+2019-01-17 00:10:10 Create table db
+2019-01-17 00:10:10 Change default database to db
+2019-01-17 00:11:04 Create schema db
+2019-01-17 00:11:04 Create schema test
+2019-01-17 00:11:04 Create table db
+2019-01-17 00:11:04 Change default database to db
+2019-01-17 00:24:46 Create schema db
+2019-01-17 00:24:46 Create schema test
+2019-01-17 00:24:46 Create table db
+2019-01-17 00:24:46 Change default database to db
+2019-01-17 00:28:00 Create schema db
+2019-01-17 00:28:00 Create schema test
+2019-01-17 00:28:00 Create table db
+2019-01-17 00:28:00 Change default database to db
+2019-01-17 00:29:42 Create schema db
+2019-01-17 00:29:42 Create schema test
+2019-01-17 00:29:42 Create table db
+2019-01-17 00:29:42 Change default database to db
+2019-01-17 00:32:25 Create schema db
+2019-01-17 00:32:25 Create schema test
+2019-01-17 00:32:25 Create table db
+2019-01-17 00:32:25 Change default database to db
+2019-01-17 00:35:32 Create schema db
+2019-01-17 00:35:32 Create schema test
+2019-01-17 00:35:32 Create table db
+2019-01-17 00:35:32 Change default database to db
+2019-01-17 01:01:11 Create schema db
+2019-01-17 01:01:11 Create schema test
+2019-01-17 01:01:11 Create table db
+2019-01-17 01:01:11 Change default database to db
+2019-01-17 01:01:35 Delete from db.students
+2019-01-17 01:04:56 Create schema db
+2019-01-17 01:04:56 Create schema test
+2019-01-17 01:04:56 Create table db
+2019-01-17 01:04:56 Change default database to db
+2019-01-17 01:05:03 Delete from db.students
+2019-01-17 01:09:01 Create schema db
+2019-01-17 01:09:01 Create schema test
+2019-01-17 01:09:01 Create table db
+2019-01-17 01:09:01 Change default database to db
+2019-01-17 01:09:04 Delete from db.students
